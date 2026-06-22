@@ -6,7 +6,9 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/homescreen.dart';
 import '../../features/attendance/presentation/screens/checkin_screen.dart';
 import '../../features/attendance/presentation/screens/checkin_success_screen.dart';
+import '../../features/attendance/presentation/screens/checkout_success_screen.dart';
 import '../../features/attendance/presentation/screens/workReason_screen.dart';
+import 'package:demo4/features/attendance/presentation/screens/check_out_exception_screen.dart';
 // Import other screens as needed
 
 import 'app_routes.dart';
@@ -31,13 +33,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.checkIn,
         name: 'check-in-full',
-        builder: (context, state) => const CheckInScreen(),
+        builder: (context, state) {
+          final isCheckOut = state.extra is bool ? state.extra as bool : false;
+          return CheckInScreen(isCheckOut: isCheckOut);
+        },
       ),
       GoRoute(
         path: AppRoutes.checkInSuccess,
         name: 'check-in-success',
         builder: (context, state) {
-          final args = state.extra as Map<String, String>;
+          final args = state.extra as Map<String, dynamic>;
           return CheckInSuccessScreen(
             attendanceStatus: args['attendanceStatus'] ?? '',
             geofenceStatus: args['geofenceStatus'] ?? '',
@@ -45,13 +50,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             workMode: args['workMode'] ?? '',
             location: args['location'] ?? '',
             shiftType: args['shiftType'] ?? '',
+            isCheckOut: args['isCheckOut'] ?? false,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.checkOutSuccess,
+        name: 'check-out-success',
+        builder: (context, state) => const CheckOutScreen(),
       ),
       GoRoute(
         path: AppRoutes.workReason,
         name: 'work-reason',
         builder: (context, state) => const WorkReasonScreen(),
+      ),
+      GoRoute(
+        path: '/check-out-exception',
+        name: 'check-out-exception',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>;
+          return CheckOutExceptionScreen(
+            latitude: extras['latitude'] as double,
+            longitude: extras['longitude'] as double,
+            distanceInMeters: extras['distanceInMeters'] as double,
+            officeLocation: extras['officeLocation'] as String,
+            officeLatitude: extras['officeLatitude'] as double,
+            officeLongitude: extras['officeLongitude'] as double,
+            attemptedAt: extras['attemptedAt'] as DateTime,
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) {

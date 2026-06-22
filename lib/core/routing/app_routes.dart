@@ -15,6 +15,9 @@ abstract class AppRoutes {
   /// Check-in success screen route
   static const String checkInSuccess = '/check-in-success';
 
+  /// Check-out success screen route
+  static const String checkOutSuccess = '/check-out-success';
+
   /// Work reason selection screen
   static const String workReason = '/work-reason';
 
@@ -23,6 +26,9 @@ abstract class AppRoutes {
 
   /// Check-in history screen
   static const String checkInHistory = '/check-in-history';
+
+  /// Check-out exception screen
+  static const String checkOutException = 'check-out-exception';
 
   /// Employee profile screen
   static const String profile = '/profile';

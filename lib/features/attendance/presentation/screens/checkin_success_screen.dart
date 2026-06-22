@@ -18,6 +18,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
   final String shiftType;
   final bool approvalFound;
   final bool isWithinGeofence;
+  final bool isCheckOut; // New parameter
 
   const CheckInSuccessScreen({
     super.key,
@@ -29,6 +30,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
     required this.shiftType,
     this.approvalFound = true,
     this.isWithinGeofence = false,
+    this.isCheckOut = false, // Default to check-in
   });
 
   @override
@@ -91,7 +93,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
         ),
       ),
       title: Text(
-        'Check in',
+        isCheckOut ? 'Check out' : 'Check in',
         style: AppTypography.heading2.copyWith(
           color: Colors.white,
           fontFamily: 'LibSerif',
@@ -143,7 +145,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
 
   Widget _buildTitle() {
     return Text(
-      'Checked In!',
+      isCheckOut ? 'Checked Out!' : 'Checked In!',
       style: AppTypography.heading1.copyWith(
           color: AppColors.neutral900,
           fontWeight: FontWeight.w700,
@@ -158,7 +160,9 @@ class CheckInSuccessScreen extends ConsumerWidget {
       text: TextSpan(
         children: [
           TextSpan(
-            text: 'Your attendance has been marked as\n',
+            text: isCheckOut 
+                ? 'Your attendance has been marked as final for today.\n'
+                : 'Your attendance has been marked as\n',
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.neutral600,
               height: 1.5,
@@ -166,15 +170,16 @@ class CheckInSuccessScreen extends ConsumerWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-          TextSpan(
-            text: '$attendanceStatus-$workMode',
-            style: AppTypography.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF64748B),
-              height: 1.5,
-              fontFamily: 'DMSans',
+          if (!isCheckOut)
+            TextSpan(
+              text: '$attendanceStatus-$workMode',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF64748B),
+                height: 1.5,
+                fontFamily: 'DMSans',
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -361,7 +366,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
             showDivider: true,
           ),
           _buildInfoRow(
-            title: 'Check-In Time',
+            title: isCheckOut ? 'Check-Out Time' : 'Check-In Time',
             statusLabel: currentTime,
             textColor: const Color(0xFF10B981),
             showDivider: true,
@@ -503,11 +508,16 @@ class CheckInSuccessScreen extends ConsumerWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          // Update isCheckedIn in dashboard_provider
-          ref.read(dashboardStateProvider.notifier).setCheckedIn(true);
-
-          // Navigate to dashboard
-          context.go(AppRoutes.dashboard);
+          if (isCheckOut) {
+            // If checking out, go to the summary screen
+            ref.read(dashboardStateProvider.notifier).setCheckedIn(false);
+            context.go(AppRoutes.checkOutSuccess);
+          } else {
+            // Update isCheckedIn in dashboard_provider
+            ref.read(dashboardStateProvider.notifier).setCheckedIn(true);
+            // Navigate to dashboard
+            context.go(AppRoutes.dashboard);
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF3B82F6),
@@ -528,7 +538,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
             ),
             SizedBox(width: AppSpacing.sm),
             Text(
-              'Go to Home',
+              isCheckOut ? 'View Summary' : 'Go to Home',
               style: AppTypography.label.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,

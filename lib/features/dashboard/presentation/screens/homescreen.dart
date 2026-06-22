@@ -27,11 +27,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _handleCheckIn() {
     final dashboardState = ref.read(dashboardStateProvider.notifier);
     if (!ref.read(dashboardStateProvider).isCheckedIn) {
-      context.push(AppRoutes.checkIn).then((_) {
-        dashboardState.setCheckedIn(true);
-      });
+      context.push(AppRoutes.checkIn, extra: false);
     } else {
-      dashboardState.setCheckedIn(false);
+      context.push(AppRoutes.checkIn, extra: true);
     }
   }
 

@@ -13,7 +13,8 @@ import '../../data/data_sources/dummy_geolocation.dart';
 import '../providers/checkin_providers.dart';
 
 class CheckInScreen extends ConsumerStatefulWidget {
-  const CheckInScreen({super.key});
+  final bool isCheckOut;
+  const CheckInScreen({super.key, this.isCheckOut = false});
 
   @override
   ConsumerState<CheckInScreen> createState() => _CheckInScreenState();
@@ -162,7 +163,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           final formattedTime =
               '${hour.toString().padLeft(2, '0')}:${record.checkInTime.minute.toString().padLeft(2, '0')} $period';
 
-          if (mounted) {
+                if (mounted) {
             context.pushReplacementNamed(
               'check-in-success',
               extra: {
@@ -173,35 +174,52 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 'workMode': 'Office',
                 'location': record.officeLocation,
                 'shiftType': record.shiftType,
+                'isCheckOut': widget.isCheckOut,
               },
             );
           }
         }
       } else {
-        // User is outside geofence - show warning modal
+        // User is outside geofence
         setState(() {
           _isCheckingIn = false;
         });
 
         if (!mounted) return;
 
-        // Get approximate location name
-        final locationName = await _getLocationName(latitude, longitude);
+        // For check-out, navigate to check-out exception screen
+        if (widget.isCheckOut) {
+          context.pushNamed(
+            'check-out-exception',
+            extra: {
+              'latitude': latitude,
+              'longitude': longitude,
+              'distanceInMeters': distance,
+              'officeLocation': officeLocation,
+              'officeLatitude': officeLatitude,
+              'officeLongitude': officeLongitude,
+              'attemptedAt': DateTime.now(),
+            },
+          );
+        } else {
+          // For check-in, keep existing logic
+          final locationName = await _getLocationName(latitude, longitude);
 
-        final hasPermission = await _showOutsideGeofenceModal(
-          locationName,
-          latitude,
-          longitude,
-          distance,
-        );
+          final hasPermission = await _showOutsideGeofenceModal(
+            locationName,
+            latitude,
+            longitude,
+            distance,
+          );
 
-        if (!mounted) return;
+          if (!mounted) return;
 
-        if (hasPermission == true) {
-          await _showCheckingApprovalsDialog();
+          if (hasPermission == true) {
+            await _showCheckingApprovalsDialog();
 
-          if (mounted) {
-            context.go('/work-reason'); // ← use path directly
+            if (mounted) {
+              context.go('/work-reason');
+            }
           }
         }
       }
@@ -254,7 +272,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           ),
         ),
         title: Text(
-          'Check in',
+          widget.isCheckOut ? 'Check out' : 'Check in',
           style: AppTypography.heading2.copyWith(
             color: AppColors.darkTextPrimary,
             fontFamily: 'LibSerif',
@@ -312,10 +330,12 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Work from Office. Geofence and QR scan required.',
-              style: TextStyle(
+              widget.isCheckOut 
+                  ? 'Work from Office. Geofence and QR scan required for Check-out.'
+                  : 'Work from Office. Geofence and QR scan required.',
+              style: const TextStyle(
                 color: Color(0xFF1A40C2),
                 fontSize: 14,
               ),
@@ -728,22 +748,22 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         const SizedBox(height: 16),
         RichText(
           textAlign: TextAlign.center,
-          text: const TextSpan(
-            style: TextStyle(
+          text: TextSpan(
+            style: const TextStyle(
               fontSize: 16,
               fontFamily: 'DMSans',
               color: Color(0xFF464555),
             ),
             children: [
-              TextSpan(text: 'Scan the office '),
+              const TextSpan(text: 'Scan the office '),
               TextSpan(
-                text: 'Check-In QR ',
-                style: TextStyle(
+                text: widget.isCheckOut ? 'Check-Out QR ' : 'Check-In QR ',
+                style: const TextStyle(
                   color: Color(0xFF3525CD),
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              TextSpan(text: 'code displayed at the entrance'),
+              const TextSpan(text: 'code displayed at the entrance'),
             ],
           ),
         ),
