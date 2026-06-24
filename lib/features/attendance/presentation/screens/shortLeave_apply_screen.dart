@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 
 /// Screen for applying for early exit / short leave when an employee
 /// has not met the minimum required hours for the day at check-out.
 class ShortLeaveApplyScreen extends StatefulWidget {
-  const ShortLeaveApplyScreen({super.key});
+  final String checkInTime;
+  final String checkOutTime;
+  final Duration totalHours;
+  final Duration shortfall;
+
+  const ShortLeaveApplyScreen({
+    super.key,
+    required this.checkInTime,
+    required this.checkOutTime,
+    required this.totalHours,
+    required this.shortfall,
+  });
 
   @override
   State<ShortLeaveApplyScreen> createState() => _ShortLeaveApplyScreenState();
@@ -26,13 +38,7 @@ class _ShortLeaveApplyScreenState extends State<ShortLeaveApplyScreen> {
 
   Future<void> _handleSubmit() async {
     if (_reasonController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add a reason for leave'),
-          backgroundColor: AppColors.error,
-          duration: Duration(seconds: 2),
-        ),
-      );
+
       return;
     }
 
@@ -50,15 +56,25 @@ class _ShortLeaveApplyScreenState extends State<ShortLeaveApplyScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      /*ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Submitted for manager approval'),
           backgroundColor: AppColors.success,
           duration: Duration(seconds: 2),
         ),
-      );
+      );*/
 
-      context.pop();
+      context.pushReplacementNamed(
+        'short-leave-pending',
+        extra: {
+          'checkInTime': widget.checkInTime,
+          'checkOutTime': widget.checkOutTime,
+          'totalHours': widget.totalHours,
+          'shortfall': widget.shortfall,
+          'managerName': 'Jai Prakash', // Mocked for now
+          'requestSentTime': DateFormat('h:mm a').format(DateTime.now()),
+        },
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

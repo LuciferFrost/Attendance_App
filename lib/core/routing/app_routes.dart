@@ -24,6 +24,12 @@ abstract class AppRoutes {
   /// Attendance tracking screen
   static const String attendance = '/attendance';
 
+  /// Attendance details screen for a single day's record
+  static const String attendanceDetail = '/attendance/detail';
+
+  /// Attendance correction / regularization request screen
+  static const String attendanceCorrection = '/attendance/correction';
+
   /// Check-in history screen
   static const String checkInHistory = '/check-in-history';
 
@@ -35,6 +41,9 @@ abstract class AppRoutes {
 
   /// Short leave application screen
   static const String shortLeaveApply = '/short-leave-apply';
+
+  /// Short leave pending screen
+  static const String shortLeavePending = '/short-leave-pending';
 
   /// Notifications screen
   static const String notifications = '/notifications';

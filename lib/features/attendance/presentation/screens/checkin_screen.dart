@@ -5,6 +5,7 @@ import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -145,13 +146,26 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     required Duration durationSoFar,
     required Duration requiredDuration,
   }) async {
+    final dashboardState = ref.read(dashboardStateProvider);
+    final shortfall = requiredDuration - durationSoFar;
+    final now = DateTime.now();
+    final formattedCheckOutTime = DateFormat('h:mm a').format(now);
+
     await showHoursShortfallDialog(
       context: context,
       durationSoFar: durationSoFar,
       requiredDuration: requiredDuration,
       onApplyShortLeave: () {
         Navigator.of(context).pop();
-        context.pushNamed('short-leave-apply');
+        context.pushNamed(
+          'short-leave-apply',
+          extra: {
+            'checkInTime': dashboardState.shiftStartTime,
+            'checkOutTime': formattedCheckOutTime,
+            'totalHours': durationSoFar,
+            'shortfall': shortfall.isNegative ? Duration.zero : shortfall,
+          },
+        );
       },
       onBackToHome: () {
         Navigator.of(context).pop();

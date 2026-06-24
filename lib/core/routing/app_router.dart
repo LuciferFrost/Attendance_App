@@ -11,6 +11,10 @@ import '../../features/attendance/presentation/screens/workReason_screen.dart';
 import 'package:demo4/features/attendance/presentation/screens/check_out_exception_screen.dart';
 import '../../features/attendance/presentation/screens/shortLeave_apply_screen.dart';
 import '../../features/attendance/presentation/screens/short_leave_pending_screen.dart';
+import '../../features/attendance_dashboard/presentation/screens/attendance_list_screen.dart';
+import '../../features/attendance_dashboard/presentation/screens/attendance_detail_screen.dart';
+import '../../features/attendance_dashboard/presentation/screens/attendance_correction_screen.dart';
+import '../../features/attendance_dashboard/domain/entities/attendance_record.dart';
 // Import other screens as needed
 
 import 'app_routes.dart';
@@ -85,10 +89,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.shortLeaveApply,
         name: 'short-leave-apply',
-        builder: (context, state) => const ShortLeaveApplyScreen(),
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return ShortLeaveApplyScreen(
+            checkInTime: args['checkInTime'] as String,
+            checkOutTime: args['checkOutTime'] as String,
+            totalHours: args['totalHours'] as Duration,
+            shortfall: args['shortfall'] as Duration,
+          );
+        },
       ),
       GoRoute(
-        path: '/short-leave-pending',
+        path: AppRoutes.shortLeavePending,
         name: 'short-leave-pending',
         builder: (context, state) {
           final args = state.extra as Map<String, dynamic>;
@@ -99,6 +111,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             shortfall: args['shortfall'] as Duration,
             managerName: args['managerName'] as String,
             requestSentTime: args['requestSentTime'] as String,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.attendance,
+        name: 'attendance',
+        builder: (context, state) => const AttendanceListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.attendanceDetail,
+        name: 'attendance-detail',
+        builder: (context, state) {
+          final record = state.extra as AttendanceRecord;
+          return AttendanceDetailScreen(record: record);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.attendanceCorrection,
+        name: 'attendance-correction',
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is AttendanceRecord) {
+            return AttendanceCorrectionScreen(record: extra);
+          }
+          final args = extra as Map<String, dynamic>;
+          return AttendanceCorrectionScreen(
+            record: args['record'] as AttendanceRecord,
+            openedFromList: args['openedFromList'] as bool? ?? false,
           );
         },
       ),
