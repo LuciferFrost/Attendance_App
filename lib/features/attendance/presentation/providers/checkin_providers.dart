@@ -2,8 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:demo4/features/attendance/domain/entities/checkin_models.dart';
 import 'package:demo4/features/attendance/data/repositories/checkin_repository.dart';
 import 'package:demo4/features/attendance/data/data_sources/geolocation_service.dart';
+import 'package:demo4/core/storage/secure_storage_service.dart';
+import 'package:demo4/core/di/service_locator.dart';
+import 'package:demo4/core/constants/app_constants.dart';
 
 // ===================== REPOSITORIES & SERVICES =====================
+
+final secureStorageProvider = Provider<SecureStorageService>((ref) {
+  return sl<SecureStorageService>();
+});
 
 final checkInRepositoryProvider = Provider<CheckInRepository>((ref) {
   return DummyCheckInRepository();
@@ -95,6 +102,21 @@ class CheckInValidationController extends Notifier<AsyncValue<CheckInValidation>
 final checkInValidationProvider = NotifierProvider<
     CheckInValidationController,
     AsyncValue<CheckInValidation>>(CheckInValidationController.new);
+
+// ===================== QR CODE TOKENS =====================
+
+final expectedQrTokenProvider = FutureProvider.family<String, bool>((ref, isCheckOut) async {
+  final storage = ref.watch(secureStorageProvider);
+  final key = isCheckOut ? AppConstants.checkOutQrCodeKey : AppConstants.checkInQrCodeKey;
+  
+  // Try to read from storage (in case there's an override)
+  final storedToken = await storage.read(key);
+  
+  if (storedToken != null) return storedToken;
+
+  // Fallback to the hardcoded values in AppConstants
+  return isCheckOut ? AppConstants.checkOutQrValue : AppConstants.checkInQrValue;
+});
 
 // ===================== CHECK-IN EXECUTION =====================
 

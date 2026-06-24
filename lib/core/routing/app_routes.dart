@@ -33,6 +33,9 @@ abstract class AppRoutes {
   /// Employee profile screen
   static const String profile = '/profile';
 
+  /// Short leave application screen
+  static const String shortLeaveApply = '/short-leave-apply';
+
   /// Notifications screen
   static const String notifications = '/notifications';
 

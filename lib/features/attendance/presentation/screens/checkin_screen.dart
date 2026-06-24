@@ -11,6 +11,9 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../data/data_sources/dummy_geolocation.dart';
 import '../providers/checkin_providers.dart';
+import 'qr_scanner_screen.dart';
+import 'checkout_geofence_exception_popup.dart';
+import 'checkout_hours_shortfall_popup.dart';
 
 class CheckInScreen extends ConsumerStatefulWidget {
   final bool isCheckOut;
@@ -43,11 +46,11 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
   /// Calculate distance between two coordinates using Haversine formula
   double _calculateDistance(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
+      double lat1,
+      double lon1,
+      double lat2,
+      double lon2,
+      ) {
     const R = 6371000; // Earth's radius in meters
     final dLat = (lat2 - lat1) * math.pi / 180;
     final dLon = (lon2 - lon1) * math.pi / 180;
@@ -69,8 +72,36 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     return '$lat, $lon';
   }
 
+  /// Parses a time string like "09:00 AM" into a DateTime anchored to today
+  DateTime _parseShiftTime(String timeStr) {
+    final parts = timeStr.trim().split(' ');
+    final hm = parts[0].split(':');
+    int hour = int.parse(hm[0]);
+    final minute = int.parse(hm[1]);
+    final period = parts.length > 1 ? parts[1].toUpperCase() : 'AM';
+
+    if (period == 'PM' && hour != 12) hour += 12;
+    if (period == 'AM' && hour == 12) hour = 0;
+
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, hour, minute);
+  }
+
+  /// Required shift duration, derived from shiftStartTime/shiftEndTime
+  Duration _getRequiredShiftDuration(
+      String shiftStartTime,
+      String shiftEndTime,
+      ) {
+    final start = _parseShiftTime(shiftStartTime);
+    var end = _parseShiftTime(shiftEndTime);
+    if (end.isBefore(start)) {
+      end = end.add(const Duration(days: 1)); // overnight shift safety
+    }
+    return end.difference(start);
+  }
+
   /// Show loading dialog while checking approvals
-  Future<void> _showCheckingApprovalsDialog() async {
+  /*Future<void> _showCheckingApprovalsDialog() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -86,15 +117,15 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     if (mounted) {
       Navigator.of(context, rootNavigator: true).pop();
     }
-  }
+  }*/
 
   /// Show modal for outside geofence case
   Future<bool?> _showOutsideGeofenceModal(
-    String locationName,
-    double latitude,
-    double longitude,
-    double distanceInMeters,
-  ) async {
+      String locationName,
+      double latitude,
+      double longitude,
+      double distanceInMeters,
+      ) async {
     return await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -105,6 +136,26 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           longitude: longitude,
           distanceInMeters: distanceInMeters,
         );
+      },
+    );
+  }
+
+  /// Show modal for insufficient hours case (check-out only)
+  Future<void> _showHoursShortfallModal({
+    required Duration durationSoFar,
+    required Duration requiredDuration,
+  }) async {
+    await showHoursShortfallDialog(
+      context: context,
+      durationSoFar: durationSoFar,
+      requiredDuration: requiredDuration,
+      onApplyShortLeave: () {
+        Navigator.of(context).pop();
+        context.pushNamed('short-leave-apply');
+      },
+      onBackToHome: () {
+        Navigator.of(context).pop();
+        context.go('/dashboard');
       },
     );
   }
@@ -125,6 +176,34 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     });
 
     try {
+      // For check-out, hours-shortfall takes priority over geofence.
+      if (widget.isCheckOut) {
+        final dashboardState = ref.read(dashboardStateProvider);
+        final requiredDuration = _getRequiredShiftDuration(
+          dashboardState.shiftStartTime,
+          dashboardState.shiftEndTime,
+        );
+        final durationSoFar = Duration(
+          milliseconds:
+          (dashboardState.hoursWorked * Duration.millisecondsPerHour)
+              .round(),
+        );
+
+        if (durationSoFar < requiredDuration) {
+          setState(() {
+            _isCheckingIn = false;
+          });
+
+          if (!mounted) return;
+
+          await _showHoursShortfallModal(
+            durationSoFar: durationSoFar,
+            requiredDuration: requiredDuration,
+          );
+          return;
+        }
+      }
+
       // Calculate distance from current location to office
       final distance = _calculateDistance(
         latitude,
@@ -137,7 +216,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
       if (isWithinGeofence) {
         // User is within geofence - proceed with normal check-in
-        await _showCheckingApprovalsDialog();
+        //await _showCheckingApprovalsDialog();
 
         if (!mounted) return;
 
@@ -163,12 +242,12 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           final formattedTime =
               '${hour.toString().padLeft(2, '0')}:${record.checkInTime.minute.toString().padLeft(2, '0')} $period';
 
-                if (mounted) {
+          if (mounted) {
             context.pushReplacementNamed(
-              'check-in-success',
+              widget.isCheckOut ? 'check-out-success' : 'check-in-success',
               extra: {
                 'attendanceStatus':
-                    record.status == 'success' ? 'Present' : record.status,
+                record.status == 'success' ? 'Present' : record.status,
                 'geofenceStatus': 'Within Geofence',
                 'checkInTime': formattedTime,
                 'workMode': 'Office',
@@ -189,16 +268,27 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
         // For check-out, navigate to check-out exception screen
         if (widget.isCheckOut) {
-          context.pushNamed(
-            'check-out-exception',
-            extra: {
-              'latitude': latitude,
-              'longitude': longitude,
-              'distanceInMeters': distance,
-              'officeLocation': officeLocation,
-              'officeLatitude': officeLatitude,
-              'officeLongitude': officeLongitude,
-              'attemptedAt': DateTime.now(),
+          await showCheckOutGeofenceExceptionDialog(
+            context: context,
+            distanceInMeters: distance,
+            onSubmitException: () {
+              Navigator.of(context).pop();
+              context.pushNamed(
+                'check-out-exception',
+                extra: {
+                  'latitude': latitude,
+                  'longitude': longitude,
+                  'distanceInMeters': distance,
+                  'officeLocation': officeLocation,
+                  'officeLatitude': officeLatitude,
+                  'officeLongitude': officeLongitude,
+                  'attemptedAt': DateTime.now(),
+                },
+              );
+            },
+            onRetryLocation: () {
+              Navigator.of(context).pop();
+              // User can retry
             },
           );
         } else {
@@ -215,7 +305,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           if (!mounted) return;
 
           if (hasPermission == true) {
-            await _showCheckingApprovalsDialog();
+            //await _showCheckingApprovalsDialog();
 
             if (mounted) {
               context.go('/work-reason');
@@ -252,6 +342,42 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     }
 
     return 'Current Location';
+  }
+
+  /// Proceed with check-in after QR verification
+  Future<void> _proceedWithCheckInAfterQRVerification() async {
+    final locationAsync = ref.watch(currentLocationProvider);
+    final geofenceAsync = ref.watch(officeGeofenceProvider);
+
+    locationAsync.when(
+      data: (location) {
+        geofenceAsync.when(
+          data: (geofence) {
+            _handleCheckIn(
+              latitude: location.latitude,
+              longitude: location.longitude,
+              officeLocation: geofence.name,
+              shiftType: 'Day Shift',
+              officeLatitude: geofence.latitude,
+              officeLongitude: geofence.longitude,
+              geofenceRadius: geofence.radiusInMeters,
+            );
+          },
+          loading: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Loading office data...')),
+          ),
+          error: (_, __) => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not fetch office data')),
+          ),
+        );
+      },
+      loading: () => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fetching your location...')),
+      ),
+      error: (_, __) => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not fetch your location')),
+      ),
+    );
   }
 
   @override
@@ -332,7 +458,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              widget.isCheckOut 
+              widget.isCheckOut
                   ? 'Work from Office. Geofence and QR scan required for Check-out.'
                   : 'Work from Office. Geofence and QR scan required.',
               style: const TextStyle(
@@ -425,8 +551,8 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                           width: 24,
                           height: 24,
                           errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.location_on,
-                                  color: Colors.blue, size: 24),
+                          const Icon(Icons.location_on,
+                              color: Colors.blue, size: 24),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Text(
@@ -456,12 +582,12 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
     final bool inGeofence = locationAsync.maybeWhen(
       data: (loc) => geofenceAsync.maybeWhen(
         data: (geo) =>
-            _calculateDistance(
-              loc.latitude,
-              loc.longitude,
-              geo.latitude,
-              geo.longitude,
-            ) <=
+        _calculateDistance(
+          loc.latitude,
+          loc.longitude,
+          geo.latitude,
+          geo.longitude,
+        ) <=
             geo.radiusInMeters,
         orElse: () => true,
       ),
@@ -521,7 +647,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 const SizedBox(height: 2),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: inGeofence
                         ? const Color(0xFFE8F5E9)
@@ -588,8 +714,8 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         child: _qrVerified
             ? _buildQRVerifiedContent()
             : _qrWrongType
-                ? _buildQRWrongTypeContent()
-                : _buildQRDefaultContent(),
+            ? _buildQRWrongTypeContent()
+            : _buildQRDefaultContent(),
       ),
     );
   }
@@ -628,6 +754,30 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
             fontFamily: 'DMSans',
           ),
         ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: 160,
+          child: ElevatedButton(
+            onPressed: _proceedWithCheckInAfterQRVerification,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B5BDB),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            child: const Text(
+              'Proceed',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'DMSans',
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -659,8 +809,8 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         const SizedBox(height: 10),
         RichText(
           textAlign: TextAlign.center,
-          text: const TextSpan(
-            style: TextStyle(
+          text: TextSpan(
+            style: const TextStyle(
               fontSize: 13,
               fontFamily: 'DMSans',
               color: Color(0xFF6B7280),
@@ -669,21 +819,21 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
             children: [
               TextSpan(text: 'You scanned the '),
               TextSpan(
-                text: 'Check-Out QR',
-                style: TextStyle(
+                text: widget.isCheckOut ? 'Check-In QR' : 'Check-Out QR',
+                style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
               ),
-              TextSpan(text: ' but this is a check-in action. Please scan the '),
+              TextSpan(text: ' but this is a ${widget.isCheckOut ? 'check-out' : 'check-in'} action. Please scan the '),
               TextSpan(
-                text: 'Check-In QR',
-                style: TextStyle(
+                text: widget.isCheckOut ? 'Check-Out QR' : 'Check-In QR',
+                style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF111827),
                 ),
               ),
-              TextSpan(text: ' located at the reception desk.'),
+              TextSpan(text: ' located at the ${widget.isCheckOut ? 'exit' : 'reception'} desk.'),
             ],
           ),
         ),
@@ -691,8 +841,38 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
         SizedBox(
           width: 160,
           child: ElevatedButton.icon(
-            onPressed: () {
-              setState(() => _qrWrongType = false);
+            onPressed: () async {
+              // Reset the states
+              setState(() {
+                _qrWrongType = false;
+                _qrVerified = false;
+              });
+
+              // Get the expected QR token from secure storage via provider
+              final expectedTokenAsync = await ref.read(
+                expectedQrTokenProvider(widget.isCheckOut).future,
+              );
+
+              if (!mounted) return;
+
+              final result = await Navigator.of(context).push<Map<String, dynamic>>(
+                MaterialPageRoute(
+                  builder: (context) => QRScannerScreen(
+                    expectedQRToken: expectedTokenAsync,
+                    isCheckOut: widget.isCheckOut,
+                  ),
+                ),
+              );
+
+              if (result != null && mounted) {
+                if (result['verified'] == true) {
+                  // QR verified - show verified content
+                  setState(() => _qrVerified = true);
+                } else if (result['wrongType'] == true) {
+                  // Wrong QR type - show error again
+                  setState(() => _qrWrongType = true);
+                }
+              }
             },
             icon: Image.asset(
               'assets/images/checkin_camera.png',
@@ -729,9 +909,6 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
   }
 
   Widget _buildQRDefaultContent() {
-    final locationAsync = ref.watch(currentLocationProvider);
-    final geofenceAsync = ref.watch(officeGeofenceProvider);
-
     return Column(
       children: [
         Image.asset(
@@ -768,100 +945,63 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 160,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  locationAsync.when(
-                    data: (location) {
-                      geofenceAsync.when(
-                        data: (geofence) {
-                          _handleCheckIn(
-                            latitude: location.latitude,
-                            longitude: location.longitude,
-                            officeLocation: geofence.name,
-                            shiftType: 'Day Shift',
-                            officeLatitude: geofence.latitude,
-                            officeLongitude: geofence.longitude,
-                            geofenceRadius: geofence.radiusInMeters,
-                          );
-                        },
-                        loading: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Loading office data...')),
-                        ),
-                        error: (_, __) => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Could not fetch office data')),
-                        ),
-                      );
-                    },
-                    loading: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fetching your location...')),
-                    ),
-                    error: (_, __) => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Could not fetch your location')),
-                    ),
-                  );
-                },
-                icon: Image.asset(
-                  'assets/images/checkin_camera.png',
-                  width: 20,
-                  height: 18,
-                  color: const Color(0xFF191C1E),
-                  errorBuilder: (_, __, ___) =>
-                      const Icon(Icons.camera_alt_rounded, size: 18),
-                ),
-                label: const Text(
-                  'Open Scanner',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'DMSans',
-                    letterSpacing: 0.3,
+        SizedBox(
+          width: 160,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              // Get the expected QR token from secure storage via provider
+              final expectedTokenAsync = await ref.read(
+                expectedQrTokenProvider(widget.isCheckOut).future,
+              );
+
+              if (!mounted) return;
+
+              final result = await Navigator.of(context).push<Map<String, dynamic>>(
+                MaterialPageRoute(
+                  builder: (context) => QRScannerScreen(
+                    expectedQRToken: expectedTokenAsync,
+                    isCheckOut: widget.isCheckOut,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF5F5F5),
-                  foregroundColor: Colors.black,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                  elevation: 0,
-                ),
+              );
+
+              if (result != null && mounted) {
+                if (result['verified'] == true) {
+                  // QR verified - show verified content
+                  setState(() => _qrVerified = true);
+                } else if (result['wrongType'] == true) {
+                  // Wrong QR type - show error
+                  setState(() => _qrWrongType = true);
+                }
+              }
+            },
+            icon: Image.asset(
+              'assets/images/checkin_camera.png',
+              width: 20,
+              height: 18,
+              color: const Color(0xFF191C1E),
+              errorBuilder: (_, __, ___) =>
+              const Icon(Icons.camera_alt_rounded, size: 18),
+            ),
+            label: const Text(
+              'Open Scanner',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'DMSans',
+                letterSpacing: 0.3,
               ),
             ),
-            const SizedBox(width: 10),
-            SizedBox(
-              width: 50,
-              child: OutlinedButton(
-                onPressed: () => setState(() => _qrWrongType = true),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: const BorderSide(color: Color(0xFFEF4444)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9999),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: Color(0xFFEF4444),
-                ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF5F5F5),
+              foregroundColor: Colors.black,
+              padding:
+              const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(9999),
               ),
+              elevation: 0,
             ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          '← tap ✕ to simulate wrong QR scan',
-          style: TextStyle(
-            fontSize: 10,
-            color: Color(0xFFAAAAAA),
-            fontFamily: 'DMSans',
           ),
         ),
       ],
@@ -1114,7 +1254,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
               const SizedBox(height: 10),
               Text(
                 'Check-in requires you to be within the office premises. '
-                'You are currently $distanceKm km away from the assigned office.',
+                    'You are currently $distanceKm km away from the assigned office.',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w400,

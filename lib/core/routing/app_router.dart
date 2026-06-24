@@ -9,6 +9,8 @@ import '../../features/attendance/presentation/screens/checkin_success_screen.da
 import '../../features/attendance/presentation/screens/checkout_success_screen.dart';
 import '../../features/attendance/presentation/screens/workReason_screen.dart';
 import 'package:demo4/features/attendance/presentation/screens/check_out_exception_screen.dart';
+import '../../features/attendance/presentation/screens/shortLeave_apply_screen.dart';
+import '../../features/attendance/presentation/screens/short_leave_pending_screen.dart';
 // Import other screens as needed
 
 import 'app_routes.dart';
@@ -77,6 +79,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             officeLatitude: extras['officeLatitude'] as double,
             officeLongitude: extras['officeLongitude'] as double,
             attemptedAt: extras['attemptedAt'] as DateTime,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.shortLeaveApply,
+        name: 'short-leave-apply',
+        builder: (context, state) => const ShortLeaveApplyScreen(),
+      ),
+      GoRoute(
+        path: '/short-leave-pending',
+        name: 'short-leave-pending',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return ShortLeavePendingScreen(
+            checkInTime: args['checkInTime'] as String,
+            checkOutTime: args['checkOutTime'] as String,
+            totalHours: args['totalHours'] as Duration,
+            shortfall: args['shortfall'] as Duration,
+            managerName: args['managerName'] as String,
+            requestSentTime: args['requestSentTime'] as String,
           );
         },
       ),

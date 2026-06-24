@@ -182,7 +182,7 @@ class _CheckOutExceptionScreenState
               _buildLocationCard(),
               const SizedBox(height: AppSpacing.lg),
               _buildManagerCard(),
-              const SizedBox(height: AppSpacing.xxxl),
+              const SizedBox(height: 100),
               _buildSubmitButton(),
               const SizedBox(height: AppSpacing.md),
               _buildCancelButton(),
@@ -197,32 +197,38 @@ class _CheckOutExceptionScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
+        color: const Color(0x0D4F46E5),
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         border: Border.all(
-          color: const Color(0xFF90CAF9),
+          color: const Color(0x1A4F46E5),
         ),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.info_rounded,
-            color: Color(0xFF1976D2),
-            size: 20,
-          ),
+
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Outside Geofence at Check-Out',
-                  style: TextStyle(
-                    color: Color(0xFF1976D2),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'DMSans',
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.info_rounded,
+                      color: Color(0xFF3B5BDB),
+                      size: 15,
+                    ),
+                    const SizedBox(width:6),
+                    const Text(
+                      'Outside Geofence at Check-Out',
+                      style: TextStyle(
+                        color: Color(0xFF3B5BDB),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'DMSans',
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -234,8 +240,8 @@ class _CheckOutExceptionScreenState
                           Text(
                             'GEOFENCE RESULT',
                             style: TextStyle(
-                              color: Color(0xFF1976D2).withOpacity(0.7),
-                              fontSize: 11,
+                              color: Color(0xFF464555),
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                               fontFamily: 'DMSans',
                             ),
@@ -244,8 +250,8 @@ class _CheckOutExceptionScreenState
                           Text(
                             'Failed • ${_formatDistance(widget.distanceInMeters)} away',
                             style: const TextStyle(
-                              color: Color(0xFF1976D2),
-                              fontSize: 13,
+                              color: Color(0xFFEF4444),
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               fontFamily: 'DMSans',
                             ),
@@ -260,8 +266,8 @@ class _CheckOutExceptionScreenState
                           Text(
                             'ATTEMPTED AT',
                             style: TextStyle(
-                              color: Color(0xFF1976D2).withOpacity(0.7),
-                              fontSize: 11,
+                              color: Color(0xFF464555),
+                              fontSize: 12,
                               fontWeight: FontWeight.w500,
                               fontFamily: 'DMSans',
                             ),
@@ -270,8 +276,8 @@ class _CheckOutExceptionScreenState
                           Text(
                             _formatTime(widget.attemptedAt),
                             style: const TextStyle(
-                              color: Color(0xFF1976D2),
-                              fontSize: 13,
+                              color: Color(0xFF11141E),
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               fontFamily: 'DMSans',
                             ),
@@ -306,12 +312,7 @@ class _CheckOutExceptionScreenState
           maxLines: 1,
           enabled: !_isSubmitting,
           decoration: InputDecoration(
-            hintText: 'Left office site for urgent client escalation',
-            hintStyle: const TextStyle(
-              color: Color(0xFFAAAAAA),
-              fontSize: 14,
-              fontFamily: 'DMSans',
-            ),
+
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -359,13 +360,8 @@ class _CheckOutExceptionScreenState
           minLines: 3,
           enabled: !_isSubmitting,
           decoration: InputDecoration(
-            hintText:
-            'Had to rush to client site for urgent requirement discussion before EOD. Left office premises at 6:20 PM',
-            hintStyle: const TextStyle(
-              color: Color(0xFFAAAAAA),
-              fontSize: 14,
-              fontFamily: 'DMSans',
-            ),
+
+
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 12,
@@ -411,13 +407,13 @@ class _CheckOutExceptionScreenState
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFFECEEF0),
+              borderRadius: BorderRadius.circular(999),
             ),
             child: const Center(
               child: Icon(
                 Icons.location_on_rounded,
-                color: Color(0xFF3B82F6),
+                color: Color(0xFF3525CD),
                 size: 20,
               ),
             ),
@@ -430,44 +426,52 @@ class _CheckOutExceptionScreenState
                 Text(
                   widget.officeLocation,
                   style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'DMSans',
+                    color: const Color(0xFF11141E),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'LibSans',
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${widget.officeLatitude.toStringAsFixed(4)}°N, ${widget.officeLongitude.toStringAsFixed(4)}°E',
                   style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: Color(0xFF464555),
                     fontSize: 12,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w600,
                     fontFamily: 'DMSans',
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFF10B981),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0x1A10B981),
+                    borderRadius: BorderRadius.circular(999),
+
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF047857),
+                          size: 12,
+                        ),
+
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Location captured',
+                        style: TextStyle(
+                          color: Color(0xFF047857),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'LibSans',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      'Location captured',
-                      style: TextStyle(
-                        color: Color(0xFF10B981),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'DMSans',
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -481,10 +485,10 @@ class _CheckOutExceptionScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF2F4F6),
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         border: Border.all(
-          color: const Color(0xFFE5E7EB),
+          color: const Color(0x4DC7C4D8),
         ),
       ),
       child: Row(
@@ -493,8 +497,8 @@ class _CheckOutExceptionScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF5B6FDB),
-              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF3525CD),
+              borderRadius: BorderRadius.circular(999),
             ),
             child: const Center(
               child: Text(
@@ -517,8 +521,8 @@ class _CheckOutExceptionScreenState
                   'Arvind Joshi',
                   style: TextStyle(
                     color: Colors.black,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                     fontFamily: 'DMSans',
                   ),
                 ),
@@ -526,9 +530,9 @@ class _CheckOutExceptionScreenState
                 const Text(
                   'Will review this exception',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: Color(0xFF464555),
                     fontSize: 12,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     fontFamily: 'DMSans',
                   ),
                 ),
@@ -536,16 +540,16 @@ class _CheckOutExceptionScreenState
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0x4D6CF8BB),
+              borderRadius: BorderRadius.circular(999),
             ),
             child: const Text(
               'Will Notify',
               style: TextStyle(
-                color: Color(0xFF059669),
-                fontSize: 11,
+                color: Color(0xFF00714D),
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 fontFamily: 'DMSans',
               ),
@@ -621,32 +625,34 @@ class _CheckOutExceptionScreenState
   }
 
   Widget _buildExceptionSubmittedModal(BuildContext dialogContext, CheckOutExceptionResponse response) {
-    return Dialog(
+    return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Container(
+      content: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.only(bottom: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80,
-                height: 80,
+                width: 72,
+                height: 72,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(14),
+                  color: const Color(0xFFFFF9E5),
+                  borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.notifications_active_rounded,
-                    size: 40,
-                    color: Color(0xFFD97706),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    'assets/images/checkout_exception_notif.png',
+                    width: 30.95,
+                    height: 30.95,
+                    //color: Color(0xFFD97706),
                   ),
                 ),
               ),
@@ -655,7 +661,10 @@ class _CheckOutExceptionScreenState
                 'Exception Submitted',
                 style: AppTypography.heading2.copyWith(
                   color: Colors.black,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'PlayfairDisplay',
+                  fontSize: 20,
+                  //height: 28,
                 ),
               ),
               const SizedBox(height: 10),
@@ -665,51 +674,57 @@ class _CheckOutExceptionScreenState
                 style: AppTypography.bodySmall.copyWith(
                   color: const Color(0xFF6B7280),
                   height: 1.5,
+                  fontFamily: 'DMSans',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+
                 ),
               ),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
+                  color: const Color(0xFFFEF8E8),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFFDEBE54),
+                    color: const Color(0xFFFEF3C7),
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.info_rounded,
-                      color: Color(0xFFD97706),
-                      size: 18,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Image.asset(
+                          'assets/images/checkout_exception_notifier.png',
+                          //color: Color(0xFFFFFFFF),
+                          height: 28,
+                          width: 28,
+                        ),
+
+                        const SizedBox(width: 10),
+                        const Text(
+                          'Manager Notified',
+                          style: TextStyle(
+                            color: Color(0xFFB88230),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'DMSans',
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Manager Notified',
-                            style: TextStyle(
-                              color: Color(0xFFD97706),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'DMSans',
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'An approval request for your check-out has been sent to ${response.managerName} (Manager).',
-                            style: const TextStyle(
-                              color: Color(0xFFB45309),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              fontFamily: 'DMSans',
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
+                    const SizedBox(height: 8), // Spacing between sections
+                    Text(
+                      'An approval request for your check-out has been sent to ${response.managerName} (Manager).',
+                      style: const TextStyle(
+                        color: Color(0xFFB88230),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'DMSans',
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -734,7 +749,7 @@ class _CheckOutExceptionScreenState
                   child: const Text(
                     'Ok, got it',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'DMSans',
                       color: Colors.white,
@@ -742,31 +757,7 @@ class _CheckOutExceptionScreenState
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(
-                      color: Color(0xFFE5E7EB),
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'Continue with Selected Reason',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'DMSans',
-                      color: Color(0xFF374151),
-                    ),
-                  ),
-                ),
-              ),
+              //const SizedBox(height: 4),
             ],
           ),
         ),
