@@ -116,28 +116,163 @@ class _AttendanceCorrectionScreenState
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
+    final now = TimeOfDay.now();
+    int displayHour = now.hour % 12 == 0 ? 12 : now.hour % 12;
+    int selectedMinute = now.minute;
+    int selectedSecond = 0;
+    bool isAm = now.hour < 12;
+
+    await showDialog(
       context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF3B5BDB),
-              onPrimary: Colors.white,
-              onSurface: Color(0xFF11141E),
-            ),
-          ),
-          child: child!,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setInnerState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Text(
+                'SELECT TIME',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 1.2),
+              ),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildSpinner(
+                    label: 'HOUR',
+                    value: displayHour,
+                    min: 1,
+                    max: 12,
+                    onChanged: (v) => setInnerState(() => displayHour = v),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  _buildSpinner(
+                    label: 'MINUTE',
+                    value: selectedMinute,
+                    min: 0,
+                    max: 59,
+                    onChanged: (v) => setInnerState(() => selectedMinute = v),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 24),
+                    child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ),
+                  _buildSpinner(
+                    label: 'SECOND',
+                    value: selectedSecond,
+                    min: 0,
+                    max: 59,
+                    onChanged: (v) => setInnerState(() => selectedSecond = v),
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAmPmButton(
+                        label: 'AM',
+                        selected: isAm,
+                        onTap: () => setInnerState(() => isAm = true),
+                      ),
+                      const SizedBox(height: 4),
+                      _buildAmPmButton(
+                        label: 'PM',
+                        selected: !isAm,
+                        onTap: () => setInnerState(() => isAm = false),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final hour24 = isAm
+                        ? (displayHour == 12 ? 0 : displayHour)
+                        : (displayHour == 12 ? 12 : displayHour + 12);
+                    final formatted = DateFormat('hh:mm a').format(
+                      DateTime(2024, 1, 1, hour24, selectedMinute),
+                    );
+                    setState(() => _timeController.text = formatted);
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Done'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-    if (picked != null) {
-      final formatted = DateFormat('hh:mm a').format(
-        DateTime(2024, 1, 1, picked.hour, picked.minute),
-      );
-      setState(() => _timeController.text = formatted);
-    }
+  }
+
+  Widget _buildSpinner({
+    required String label,
+    required int value,
+    required int min,
+    required int max,
+    required ValueChanged<int> onChanged,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 4),
+        IconButton(
+          icon: const Icon(Icons.keyboard_arrow_up),
+          onPressed: () => onChanged(value >= max ? min : value + 1),
+        ),
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFF3B5BDB),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            value.toString().padLeft(2, '0'),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.keyboard_arrow_down),
+          onPressed: () => onChanged(value <= min ? max : value - 1),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAmPmButton({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 36,
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFF3B5BDB) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : Colors.grey,
+          ),
+        ),
+      ),
+    );
   }
 
   void _submit() {

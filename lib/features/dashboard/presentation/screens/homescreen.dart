@@ -321,10 +321,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               value,
               textAlign: TextAlign.center,
               style: AppTypography.bodySmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
-                fontSize: 11,
-                fontFamily: "LiberationSans"
+                  color: Colors.white,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 11,
+                  fontFamily: "LiberationSans"
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -386,7 +386,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               case 1:
                 context.push(AppRoutes.attendance);
                 break;
-              // Add cases for other actions as needed
+              case 2:
+                context.push(AppRoutes.timesheet);
+                break;
+              case 3:
+                context.push(AppRoutes.leave);
+                break;
+            // Add cases for other actions as needed
             }
           },
           child: _buildActionCard(
@@ -789,7 +795,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(
           navItems.length,
-          (index) => _buildNavItem(
+              (index) => _buildNavItem(
             icon: navItems[index]['icon'],
             label: navItems[index]['label'] as String,
             index: index,

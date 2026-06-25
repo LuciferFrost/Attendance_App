@@ -18,7 +18,13 @@ import 'checkout_hours_shortfall_popup.dart';
 
 class CheckInScreen extends ConsumerStatefulWidget {
   final bool isCheckOut;
-  const CheckInScreen({super.key, this.isCheckOut = false});
+  final Duration qrSuccessDelay;
+
+  const CheckInScreen({
+    super.key,
+    this.isCheckOut = false,
+    this.qrSuccessDelay = const Duration(seconds: 1),
+  });
 
   @override
   ConsumerState<CheckInScreen> createState() => _CheckInScreenState();
@@ -360,8 +366,8 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
 
   /// Proceed with check-in after QR verification
   Future<void> _proceedWithCheckInAfterQRVerification() async {
-    final locationAsync = ref.watch(currentLocationProvider);
-    final geofenceAsync = ref.watch(officeGeofenceProvider);
+    final locationAsync = ref.read(currentLocationProvider);
+    final geofenceAsync = ref.read(officeGeofenceProvider);
 
     locationAsync.when(
       data: (location) {
@@ -769,7 +775,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        SizedBox(
+        /*SizedBox(
           width: 160,
           child: ElevatedButton(
             onPressed: _proceedWithCheckInAfterQRVerification,
@@ -791,7 +797,7 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
               ),
             ),
           ),
-        ),
+        ),*/
       ],
     );
   }
@@ -882,6 +888,10 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 if (result['verified'] == true) {
                   // QR verified - show verified content
                   setState(() => _qrVerified = true);
+                  await Future.delayed(widget.qrSuccessDelay);
+                  if (mounted) {
+                    _proceedWithCheckInAfterQRVerification();
+                  }
                 } else if (result['wrongType'] == true) {
                   // Wrong QR type - show error again
                   setState(() => _qrWrongType = true);
@@ -983,6 +993,10 @@ class _CheckInScreenState extends ConsumerState<CheckInScreen> {
                 if (result['verified'] == true) {
                   // QR verified - show verified content
                   setState(() => _qrVerified = true);
+                  await Future.delayed(widget.qrSuccessDelay);
+                  if (mounted) {
+                    _proceedWithCheckInAfterQRVerification();
+                  }
                 } else if (result['wrongType'] == true) {
                   // Wrong QR type - show error
                   setState(() => _qrWrongType = true);

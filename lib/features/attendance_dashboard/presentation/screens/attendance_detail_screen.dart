@@ -115,7 +115,7 @@ class AttendanceDetailScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  'EMP-1042',
+                  record.employeeId,
                   style: const TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 12,
@@ -128,7 +128,7 @@ class AttendanceDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Mon, 03 Jun',
+            DateFormat('EEE, dd MMM').format(record.date),
             style: const TextStyle(
               fontFamily: 'PlayfairDisplay',
               fontSize: 26,
@@ -137,9 +137,9 @@ class AttendanceDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildLabelValue('WORK MODE', 'In-office', icon: Icons.business_rounded),
+          _buildLabelValue('WORK MODE', record.workMode, icon: Icons.business_rounded),
           const SizedBox(height: 12),
-          _buildLabelValue('SHIFT TYPE', 'Morning Shift (10:00 AM – 06:30 PM)', icon: Icons.access_time_rounded),
+          _buildLabelValue('SHIFT TYPE', record.shiftLabel, icon: Icons.access_time_rounded),
         ],
       ),
     );
@@ -182,6 +182,7 @@ class AttendanceDetailScreen extends StatelessWidget {
   }
 
   Widget _buildSummaryCard() {
+    final timeFormat = DateFormat('hh:mm a');
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -208,19 +209,19 @@ class AttendanceDetailScreen extends StatelessWidget {
           ),
           _buildSummaryRow(
             'Check-In',
-            '09:02 AM',
+            record.checkInTime != null ? timeFormat.format(record.checkInTime!) : '--:--',
             showDivider: false,
             monospaceValue: true,
           ),
           _buildSummaryRow(
             'Check-Out',
-            '06:14 PM',
+            record.checkOutTime != null ? timeFormat.format(record.checkOutTime!) : '--:--',
             showDivider: true,
             monospaceValue: true,
           ),
           _buildSummaryRow(
             'Total Hours',
-            '09h 12m',
+            record.totalHoursLabel ?? '--',
             showDivider: false,
             valueColor: const Color(0xFF3B5BDB),
             bold: true,
@@ -311,9 +312,9 @@ class AttendanceDetailScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Sector 62, Noida, Uttar Pradesh',
-                  style: TextStyle(
+                Text(
+                  record.locationLabel,
+                  style: const TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
@@ -326,25 +327,25 @@ class AttendanceDetailScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFDCFCE7),
+              color: record.insideGeofence ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.check_circle,
+                Icon(
+                  record.insideGeofence ? Icons.check_circle : Icons.cancel,
                   size: 11,
-                  color: Color(0xFF15803D),
+                  color: record.insideGeofence ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
                 ),
                 const SizedBox(width: 4),
-                const Text(
-                  'INSIDE GEOFENCE',
+                Text(
+                  record.insideGeofence ? 'INSIDE GEOFENCE' : 'OUTSIDE GEOFENCE',
                   style: TextStyle(
                     fontFamily: 'DMSans',
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF15803D),
+                    color: record.insideGeofence ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -378,25 +379,16 @@ class AttendanceDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          _buildFieldDetailRow(const AttendanceFieldDetail(
-            label: 'Field reason',
-            value: 'client meeting',
-          )),
-          const SizedBox(height: 14),
-          _buildFieldDetailRow(const AttendanceFieldDetail(
-            label: 'Place name',
-            value: 'Infosys technologies ltd.',
-          )),
-          const SizedBox(height: 14),
-          _buildFieldDetailRow(const AttendanceFieldDetail(
-            label: 'Location address',
-            value: 'Connaught Place, New Delhi',
-          )),
-          const SizedBox(height: 14),
-          _buildFieldDetailRow(const AttendanceFieldDetail(
-            label: 'Purpose/remarks',
-            value: 'Q3 product demo and pricing discussion with procurement team',
-          )),
+          ...record.fieldDetails.asMap().entries.map((entry) {
+            final index = entry.key;
+            final detail = entry.value;
+            return Column(
+              children: [
+                _buildFieldDetailRow(detail),
+                if (index < record.fieldDetails.length - 1) const SizedBox(height: 14),
+              ],
+            );
+          }),
         ],
       ),
     );

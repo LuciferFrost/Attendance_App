@@ -71,4 +71,26 @@ abstract class AppRoutes {
 
   /// Not found/error screen
   static const String notFound = '/404';
+
+  // ── Leaves ────────────────────────────────────────────────────────────────
+
+  /// Leave dashboard — balance + history
+  static const String leave = '/leave';
+
+  /// Apply for leave form
+  static const String leaveApply = '/leave/apply';
+
+  // ─── Timesheet ────────────────────────────────────────────────────────────
+
+  /// Timesheet weekly overview screen
+  static const String timesheet = '/timesheet';
+
+  /// Timesheet day detail screen (read-only past / editable current day)
+  static const String timesheetDay = '/timesheet/day';
+
+  /// Add a new timesheet entry
+  static const String timesheetAddEntry = '/timesheet/day/add';
+
+  /// Edit an existing timesheet entry
+  static const String timesheetEditEntry = '/timesheet/day/edit';
 }

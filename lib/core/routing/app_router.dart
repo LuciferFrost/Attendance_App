@@ -15,6 +15,14 @@ import '../../features/attendance_dashboard/presentation/screens/attendance_list
 import '../../features/attendance_dashboard/presentation/screens/attendance_detail_screen.dart';
 import '../../features/attendance_dashboard/presentation/screens/attendance_correction_screen.dart';
 import '../../features/attendance_dashboard/domain/entities/attendance_record.dart';
+import '../../features/leaves/presentation/screens/leave_dashboard_screen.dart';
+import '../../features/leaves/presentation/screens/leave_apply_screen.dart';
+
+
+import '../../features/timesheet/presentation/screens/timesheet_screen.dart';
+import '../../features/timesheet/presentation/screens/timesheet_day_screen.dart';
+import '../../features/timesheet/presentation/screens/timesheet_entry_screen.dart';
+import '../../features/timesheet/domain/entities/timesheet_models.dart';
 // Import other screens as needed
 
 import 'app_routes.dart';
@@ -139,6 +147,57 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return AttendanceCorrectionScreen(
             record: args['record'] as AttendanceRecord,
             openedFromList: args['openedFromList'] as bool? ?? false,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.leave,
+        name: 'leave',
+        builder: (context, state) => const LeaveDashboardScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.leaveApply,
+        name: 'leave-apply',
+        builder: (context, state) => const LeaveApplyScreen(),
+      ),
+
+      // ─── Timesheet ────────────────────────────────────────────────────────
+      GoRoute(
+        path: AppRoutes.timesheet,
+        name: 'timesheet',
+        builder: (context, state) => const TimesheetScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.timesheetDay,
+        name: 'timesheet-day',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return TimesheetDayScreen(
+            date: args['date'] as DateTime,
+            isCurrentDay: args['isCurrentDay'] as bool? ?? false,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.timesheetAddEntry,
+        name: 'timesheet-add-entry',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return TimesheetEntryScreen(
+            date: args['date'] as DateTime,
+            day: args['day'] as TimesheetDay,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.timesheetEditEntry,
+        name: 'timesheet-edit-entry',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>;
+          return TimesheetEntryScreen(
+            date: args['date'] as DateTime,
+            day: args['day'] as TimesheetDay,
+            existingEntry: args['entry'] as TimesheetEntry,
           );
         },
       ),
