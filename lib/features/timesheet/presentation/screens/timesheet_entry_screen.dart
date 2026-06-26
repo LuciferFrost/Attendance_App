@@ -107,8 +107,7 @@ class _TimesheetEntryScreenState extends ConsumerState<TimesheetEntryScreen> {
   /// = existing entry hours + remaining shortfall after excluding this entry.
   int get _hoursNeededToResolve {
     final shortfall = widget.day.requiredHours - _alreadyLogged;
-    final needed = (widget.existingEntry?.hours ?? Duration.zero) + shortfall;
-    return needed.inHours;
+    return shortfall.inHours;
   }
 
   void _onTimeChanged(String v) {
