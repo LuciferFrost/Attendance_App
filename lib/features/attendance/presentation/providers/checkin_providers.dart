@@ -74,7 +74,7 @@ class CheckInValidationController extends Notifier<AsyncValue<CheckInValidation>
 
     try {
       final repository = ref.read(checkInRepositoryProvider);
-      
+
       final timeParts = shift.startTime.split(':');
       final shiftStart = DateTime.now().copyWith(
         hour: int.parse(timeParts[0]),
@@ -99,6 +99,15 @@ class CheckInValidationController extends Notifier<AsyncValue<CheckInValidation>
   }
 }
 
+// ===================== HOLIDAY INFO =====================
+
+/// Returns [HolidayInfo] if today is a holiday/non-working day, otherwise null.
+/// Use this before allowing check-in to decide if the holiday warning flow is needed.
+final holidayInfoProvider = FutureProvider.autoDispose<HolidayInfo?>((ref) async {
+  final repository = ref.watch(checkInRepositoryProvider);
+  return repository.getTodayHolidayInfo();
+});
+
 final checkInValidationProvider = NotifierProvider<
     CheckInValidationController,
     AsyncValue<CheckInValidation>>(CheckInValidationController.new);
@@ -108,10 +117,10 @@ final checkInValidationProvider = NotifierProvider<
 final expectedQrTokenProvider = FutureProvider.family<String, bool>((ref, isCheckOut) async {
   final storage = ref.watch(secureStorageProvider);
   final key = isCheckOut ? AppConstants.checkOutQrCodeKey : AppConstants.checkInQrCodeKey;
-  
+
   // Try to read from storage (in case there's an override)
   final storedToken = await storage.read(key);
-  
+
   if (storedToken != null) return storedToken;
 
   // Fallback to the hardcoded values in AppConstants
@@ -198,7 +207,7 @@ final currentTimeProvider = StreamProvider.autoDispose<DateTime>((ref) async* {
 final currentDateFormattedProvider =
     Provider.autoDispose<String>((ref) {
   final now = ref.watch(currentTimeProvider);
-  
+
   return now.when(
     data: (time) {
       const weekdays = [
@@ -237,7 +246,7 @@ final currentDateFormattedProvider =
 final currentTimeFormattedProvider =
     Provider.autoDispose<String>((ref) {
   final now = ref.watch(currentTimeProvider);
-  
+
   return now.when(
     data: (time) {
       final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;

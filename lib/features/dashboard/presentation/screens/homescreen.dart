@@ -8,6 +8,10 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/dashboard_providers.dart';
 
+import 'package:demo4/features/manager/presentation/providers/manager_overview_provider.dart';
+
+enum _CheckInTimeResult { withinWindow, tooEarly, outsideWindow }
+
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -24,13 +28,224 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.read(dashboardStateProvider.notifier).initializeUserData();
   }
 
-  void _handleCheckIn() {
-    final dashboardState = ref.read(dashboardStateProvider.notifier);
-    if (!ref.read(dashboardStateProvider).isCheckedIn) {
-      context.push(AppRoutes.checkIn, extra: false);
-    } else {
-      context.push(AppRoutes.checkIn, extra: true);
+  Future<void> _handleCheckIn() async {
+    final state = ref.read(dashboardStateProvider);
+
+    if (!state.isCheckedIn) {
+      final now = TimeOfDay.now();
+      final checkResult = _classifyCheckInTime(now, state);
+
+      if (checkResult == _CheckInTimeResult.tooEarly) {
+        // Navigate to the early check-in screen and wait for the user's choice.
+        final result = await context.push<Map<String, dynamic>>(
+          AppRoutes.earlyCheckIn,
+          extra: state.shiftStartTime,
+        );
+
+        // User cancelled or closed the screen without proceeding.
+        if (result == null || result['proceed'] != true) return;
+
+        // Optional: forward reason/remarks to your check-in provider here.
+        // ref.read(dashboardStateProvider.notifier)
+        //     .setEarlyCheckInReason(result['reason'], result['remarks']);
+      } else if (checkResult == _CheckInTimeResult.outsideWindow) {
+        _showNotAllowedDialog(now, state);
+        return;
+      }
+      // _CheckInTimeResult.withinWindow → fall through to normal check-in
     }
+
+    context.push(AppRoutes.checkIn, extra: state.isCheckedIn);
+  }
+
+  _CheckInTimeResult _classifyCheckInTime(TimeOfDay now, DashboardState state) {
+    final start = _parseTimeOfDay(state.shiftStartTime);
+    final end = _parseTimeOfDay(state.shiftEndTime);
+    if (start == null || end == null) return _CheckInTimeResult.withinWindow; // fail open
+
+    final nowMinutes   = now.hour * 60 + now.minute;
+    final startMinutes = start.hour * 60 + start.minute;
+    final endMinutes   = end.hour * 60 + end.minute;
+    final windowStart  = startMinutes - 30; // 30-min grace before shift
+
+    final bool isNormalShift = endMinutes > startMinutes;
+
+    if (isNormalShift) {
+      // e.g. 9 AM – 6 PM
+      if (nowMinutes < windowStart) return _CheckInTimeResult.tooEarly;
+      if (nowMinutes > endMinutes)  return _CheckInTimeResult.outsideWindow;
+      return _CheckInTimeResult.withinWindow;
+    } else {
+      // Overnight shift, e.g. 10 PM – 6 AM
+      final bool beforeStart = nowMinutes < windowStart && nowMinutes > endMinutes;
+      if (beforeStart) return _CheckInTimeResult.tooEarly;
+      final bool withinWindow =
+          nowMinutes >= windowStart || nowMinutes <= endMinutes;
+      return withinWindow
+          ? _CheckInTimeResult.withinWindow
+          : _CheckInTimeResult.outsideWindow;
+    }
+  }
+
+  TimeOfDay? _parseTimeOfDay(String timeStr) {
+    // Expects format like "10:00 AM" or "06:30 PM"
+    try {
+      final parts = timeStr.trim().split(' ');
+      final hm = parts[0].split(':');
+      int hour = int.parse(hm[0]);
+      final minute = int.parse(hm[1]);
+      final period = parts[1].toUpperCase();
+      if (period == 'PM' && hour != 12) hour += 12;
+      if (period == 'AM' && hour == 12) hour = 0;
+      return TimeOfDay(hour: hour, minute: minute);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _showNotAllowedDialog(TimeOfDay now, DashboardState state) {
+    final nowFormatted = _formatTimeOfDay(now);
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon circle
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.location_off_outlined,
+                  color: Color(0xFFEF4444),
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Text(
+                'Check-In Not Allowed',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'PlayfairDisplay',
+                  color: Color(0xFF111827),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              Text(
+                'You are trying to check in outside\nyour assigned shift window',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                  fontFamily: 'DMSans',
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Error detail box
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0x33FFDAD6),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFDAD6)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Color(0xFFEF4444),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF93000A),
+                            height: 1.5,
+                            fontFamily: 'DMSans',
+                            fontWeight: FontWeight.w400,
+                          ),
+                          children: [
+                            const TextSpan(
+                              text: 'Check-in blocked. ',
+                              style: TextStyle(fontWeight: FontWeight.w600,
+                                  fontFamily: 'DMSans'),
+                            ),
+                            TextSpan(
+                              text:
+                              'Your ${state.shiftType} check-in window is '
+                                  '${state.shiftStartTime}–${state.shiftEndTime}. '
+                                  'It is currently $nowFormatted.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Back to Home button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.home_rounded, size: 20),
+                  label: const Text('Back to Home'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3B5BDB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatTimeOfDay(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
   }
 
   void _handleNavigation(int index) {
@@ -59,7 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
-
+    final managerOverview = ref.watch(managerOverviewProvider);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -122,9 +337,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Shift Summary
                     _buildShiftSummary(dashboardState),
                     const SizedBox(height: 20),
-                    // Check-in/Check-out Button
-                    //_buildCheckInButton(dashboardState),
-                    const SizedBox(height: 24),
+                    if (dashboardState.isManager) ...[
+                      _buildManagerOverview(managerOverview),
+                      const SizedBox(height: 24),
+                    ],
                   ],
                 ),
               ),
@@ -140,10 +356,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
-        //color: Color(0xFF1A1F2E),
         border: Border(
           bottom: BorderSide(
-            //color: Color(0xFF2D333F),
             width: 1,
           ),
         ),
@@ -216,8 +430,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-
-
   Widget _buildGreeting(DashboardState state) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,7 +438,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 220, // Adjust this width to control wrapping
+              width: 220,
               child: Text(
                 'Good Morning, ${state.displayName}',
                 style: AppTypography.heading2?.copyWith(
@@ -236,13 +448,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-
           ],
         ),
-
-
-
-
       ],
     );
   }
@@ -250,54 +457,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildInfoGrid(DashboardState state) {
     return Row(
       children: [
-        _buildInfoBox2( state.employeeCode),
+        _buildInfoBox2(state.employeeCode),
         const SizedBox(width: 8),
-        _buildInfoBox2( state.shiftType),
+        _buildInfoBox2(state.shiftType),
         const SizedBox(width: 8),
-        _buildInfoBox2( state.currentDate),
+        _buildInfoBox2(state.currentDate),
       ],
-    );
-  }
-
-  Widget _buildInfoBox(String label, String value) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2D3A),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: const Color(0xFF2A2D3A),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.caption?.copyWith(
-                color: const Color(0xFF9CA3AF),
-                fontSize: 10,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: AppTypography.bodySmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 11,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -341,15 +506,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'icon': state.isCheckedIn ? 'assets/images/home_Checkout.png' : 'assets/images/home_Checkin.png',
         'label': state.isCheckedIn ? 'Check Out' : 'Check In',
         'count': state.isCheckedIn ? 'Tap to end day' : 'Tap to start day',
-        'tint': state.isCheckedIn ? const Color(0x1AFA5252): const Color(0x1A10B981),
-
+        'tint': state.isCheckedIn ? const Color(0x1AFA5252) : const Color(0x1A10B981),
       },
       {
         'icon': 'assets/images/home_Attendance.png',
         'label': 'Attendance',
         'count': '${state.attendedDays} days',
         'tint': const Color(0x1A4353FF),
-
       },
       {
         'icon': 'assets/images/home_timesheet.png',
@@ -362,7 +525,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'label': 'Apply Leave',
         'count': '${state.leavesLeft}/${state.totalLeaves}',
         'tint': const Color(0x1AA855F7),
-
       },
     ];
 
@@ -392,7 +554,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               case 3:
                 context.push(AppRoutes.leave);
                 break;
-            // Add cases for other actions as needed
             }
           },
           child: _buildActionCard(
@@ -445,7 +606,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),
-
           ),
           const SizedBox(height: 4),
           Text(
@@ -458,32 +618,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  /*Widget _buildCheckInButton(DashboardState state) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _handleCheckIn,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1A1D27),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        child: Text(
-          state.isCheckedIn ? 'Check Out' : 'Check In',
-          style: AppTypography.bodyMedium?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
-    );
-  }*/
 
   Widget _buildCheckInButton() {
     return SizedBox(
@@ -605,7 +739,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       child: Column(
-        //clipBehavior: Clip.none,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -651,11 +784,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: LinearProgressIndicator(
                       value: state.progressPercentage / 100,
                       minHeight: 10,
-                      //#3B5BDB
                       backgroundColor: const Color(0xFFE5E7EB),
                       valueColor: const AlwaysStoppedAnimation<Color>(
                         Color(0xFF3B5BDB),
-
                       ),
                     ),
                   ),
@@ -697,13 +828,135 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-
-
             ],
           ),
           const SizedBox(height: 20),
           state.isCheckedIn ? _buildCheckOutButton() : _buildCheckInButton(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildManagerOverview(ManagerOverviewState overview) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'MANAGER OVERVIEW',
+                style: AppTypography.caption?.copyWith(
+                  color: const Color(0xFF9CA3AF),
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                  fontSize: 11,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+
+                  context.push(AppRoutes.teamAttendance);
+                },
+                child: Text(
+                  'View details',
+                  style: AppTypography.caption?.copyWith(
+                    color: const Color(0xFF818CF8),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Date + team count
+          Text(
+            '${overview.date} • ${overview.teamMemberCount} team members',
+            style: AppTypography.bodySmall?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Stat tiles
+          Row(
+            children: [
+              _buildManagerStatTile(
+                value: overview.stats.present,
+                label: 'PRESENT',
+                color: const Color(0xFF10B981),
+              ),
+              const SizedBox(width: 8),
+              _buildManagerStatTile(
+                value: overview.stats.absent,
+                label: 'ABSENT',
+                color: const Color(0xFFEF4444),
+              ),
+              const SizedBox(width: 8),
+              _buildManagerStatTile(
+                value: overview.stats.halfDay,
+                label: 'HALF DAY',
+                color: const Color(0xFFF59E0B),
+              ),
+              const SizedBox(width: 8),
+              _buildManagerStatTile(
+                value: overview.stats.pending,
+                label: 'PENDING',
+                color: const Color(0xFF818CF8),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManagerStatTile({
+    required int value,
+    required String label,
+    required Color color,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF252B3B),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            Text(
+              '$value',
+              style: TextStyle(
+                color: color,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'DMSans',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: AppTypography.caption?.copyWith(
+                color: const Color(0xFF9CA3AF),
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -732,7 +985,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       decoration: BoxDecoration(
         color: const Color(0xFFEFF6FF),
-        //#EFF6FF
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
@@ -742,7 +994,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             time1,
             style: AppTypography.bodySmall?.copyWith(
               color: const Color(0xFF4353FF),
-              //#4353FF
               fontWeight: FontWeight.w500,
               fontFamily: 'DMMono',
             ),
@@ -752,7 +1003,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Text(
               '—',
               style: TextStyle(
-                color: const Color(0xFF4353FF),
+                color: Color(0xFF4353FF),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
                 fontFamily: 'DMMono',
@@ -837,8 +1088,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               label,
               style: AppTypography.caption?.copyWith(
                 fontWeight: FontWeight.w500,
-                color:
-                isActive ? AppColors.primary700 : const Color(0xFF6B7280),
+                color: isActive ? AppColors.primary700 : const Color(0xFF6B7280),
               ),
             ),
           ],

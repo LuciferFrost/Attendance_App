@@ -27,7 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-    <string>We need camera access to scan QR codes for check-in/check-out</string>
+    <string>We need camera access to take profile photos and scan QR codes.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to select a profile photo.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>We need your location for geofence verification</string>
 	<key>UIApplicationSceneManifest</key>

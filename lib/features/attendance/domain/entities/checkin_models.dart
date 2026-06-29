@@ -328,3 +328,36 @@ class MockCheckInData {
     errorMessage: null,
   );
 }
+
+/// Holiday / non-working day information
+class HolidayInfo {
+  final String id;
+  final String name;
+  final DateTime date;
+  final String managerName;
+
+  const HolidayInfo({
+    required this.id,
+    required this.name,
+    required this.date,
+    required this.managerName,
+  });
+
+  factory HolidayInfo.fromJson(Map<String, dynamic> json) {
+    return HolidayInfo(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      date: DateTime.parse(json['date'] as String),
+      managerName: json['managerName'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'date': date.toIso8601String(),
+      'managerName': managerName,
+    };
+  }
+}

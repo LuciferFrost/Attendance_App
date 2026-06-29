@@ -16,6 +16,7 @@ class DashboardState {
   final String currentDate;
   final String initials;
   final String employeeCode;
+  final bool isManager;
   final String shiftType;
   final int attendedDays;
   final int leavesLeft;
@@ -33,6 +34,7 @@ class DashboardState {
     required this.displayName,
     required this.currentDate,
     required this.initials,
+    required this.isManager,
     required this.employeeCode,
     required this.shiftType,
     required this.attendedDays,
@@ -54,6 +56,7 @@ class DashboardState {
     String? initials,
     String? employeeCode,
     String? shiftType,
+    bool? isManager,
     int? attendedDays,
     int? leavesLeft,
     int? totalLeaves,
@@ -76,6 +79,7 @@ class DashboardState {
       leavesLeft: leavesLeft ?? this.leavesLeft,
       totalLeaves: totalLeaves ?? this.totalLeaves,
       isCheckedIn: isCheckedIn ?? this.isCheckedIn,
+      isManager: isManager ?? this.isManager,
       shiftPeriod: shiftPeriod ?? this.shiftPeriod,
       workLocation: workLocation ?? this.workLocation,
       shiftStartTime: shiftStartTime ?? this.shiftStartTime,
@@ -100,6 +104,7 @@ class DashboardNotifier extends Notifier<DashboardState> {
           leavesLeft: 5,
           totalLeaves: 25,
           isCheckedIn: false,
+          isManager: true, // dummy — flip to false to test non-manager view
           shiftPeriod: 'Morning Shift',
           workLocation: 'In-Office',
           shiftStartTime: '09:00 AM',

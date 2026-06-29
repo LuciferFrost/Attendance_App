@@ -18,6 +18,7 @@ class AppColors {
   static const Color primary700 = Color(0xFF4338CA); // Main brand color
   static const Color primary800 = Color(0xFF3730A3);
   static const Color primary900 = Color(0xFF312E81);
+  static const Color primary = primary700;
   //#494F61
 
   // ==================== SECONDARY PALETTE ====================
@@ -58,6 +59,7 @@ class AppColors {
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceSecondary = Color(0xFFF8F9FB);
   static const Color surfaceTertiary = Color(0xFFF1F3F7);
+  static const Color background = neutral50;
 
   // Dark mode surfaces
   static const Color darkSurface = Color(0xFF0F172A); // Very dark blue

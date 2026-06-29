@@ -20,6 +20,11 @@ class CheckInSuccessScreen extends ConsumerWidget {
   final bool isWithinGeofence;
   final bool isCheckOut; // New parameter
 
+  /// When true the screen adapts for WFH / WFF:
+  /// - Status chips show location name + Late/Present instead of geofence label
+  /// - Geofence and QR rows are hidden from the info table
+  final bool isWfh;
+
   const CheckInSuccessScreen({
     super.key,
     required this.attendanceStatus,
@@ -28,9 +33,10 @@ class CheckInSuccessScreen extends ConsumerWidget {
     required this.workMode,
     required this.location,
     required this.shiftType,
-    this.approvalFound = true,
+    this.approvalFound = false,
     this.isWithinGeofence = false,
     this.isCheckOut = false, // Default to check-in
+    this.isWfh = false,
   });
 
   @override
@@ -160,7 +166,7 @@ class CheckInSuccessScreen extends ConsumerWidget {
       text: TextSpan(
         children: [
           TextSpan(
-            text: isCheckOut 
+            text: isCheckOut
                 ? 'Your attendance has been marked as final for today.\n'
                 : 'Your attendance has been marked as\n',
             style: AppTypography.bodyMedium.copyWith(
@@ -186,6 +192,27 @@ class CheckInSuccessScreen extends ConsumerWidget {
   }
 
   Widget _buildStatusChips() {
+    if (isWfh) {
+      // WFH / WFF: show location name chip + on-time/late chip
+      final isLate = attendanceStatus.toLowerCase() == 'late';
+      return Wrap(
+        spacing: AppSpacing.md,
+        alignment: WrapAlignment.center,
+        children: [
+          _buildStatusChip(
+            iconAsset: 'assets/images/checkin_success_checkmark2.png',
+            label: geofenceStatus, // holds the resolved location string
+            color: AppColors.success,
+          ),
+          _buildStatusChip(
+            label: attendanceStatus, // 'Present' or 'Late'
+            color: isLate ? const Color(0xFFF59E0B) : AppColors.success,
+          ),
+        ],
+      );
+    }
+
+    // WFO: original chips unchanged
     return Wrap(
       spacing: AppSpacing.md,
       alignment: WrapAlignment.center,
@@ -373,22 +400,31 @@ class CheckInSuccessScreen extends ConsumerWidget {
           ),
           _buildInfoRow(
             title: 'Work Type',
-            statusLabel: 'Work from office',
+            statusLabel: workMode, // passed in: 'Work from home', 'Work from Field', or 'Work from office'
             textColor: const Color(0xFF1F2937),
             showDivider: true,
           ),
           _buildInfoRow(
-            title: 'Geofence',
-            statusLabel: 'Passed',
-            textColor: const Color(0xFF10B981),
-            showDivider: true,
+            title: 'Location',
+            statusLabel: location,
+            textColor: const Color(0xFF1F2937),
+            showDivider: !isWfh, // WFH has no Geofence/QR rows below, so no divider needed if last
           ),
-          _buildInfoRow(
-            title: 'QR Scan',
-            statusLabel: 'Passed',
-            textColor: const Color(0xFF10B981),
-            showDivider: true,
-          ),
+          // Geofence and QR rows only apply to WFO
+          if (!isWfh) ...[
+            _buildInfoRow(
+              title: 'Geofence',
+              statusLabel: 'Passed',
+              textColor: const Color(0xFF10B981),
+              showDivider: true,
+            ),
+            _buildInfoRow(
+              title: 'QR Scan',
+              statusLabel: 'Passed',
+              textColor: const Color(0xFF10B981),
+              showDivider: true,
+            ),
+          ],
           _buildInfoRow(
             title: 'Timesheet',
             statusLabel: 'Draft created',

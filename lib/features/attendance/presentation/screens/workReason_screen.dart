@@ -258,6 +258,8 @@ class _WorkReasonScreenState extends ConsumerState<WorkReasonScreen> {
         'workMode': selectedReason ?? '',
         'location': 'CraftEdge Office, Sector 62, Noida',
         'shiftType': 'Day Shift',
+        'approvalFound': isPreApproved,
+        'isWithinGeofence': false,
       },
     );
   }

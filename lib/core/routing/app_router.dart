@@ -17,13 +17,24 @@ import '../../features/attendance_dashboard/presentation/screens/attendance_corr
 import '../../features/attendance_dashboard/domain/entities/attendance_record.dart';
 import '../../features/leaves/presentation/screens/leave_dashboard_screen.dart';
 import '../../features/leaves/presentation/screens/leave_apply_screen.dart';
-
-
+import '../../features/dashboard/presentation/screens/early_checkin_screen.dart';
+import '../../features/manager/presentation/screens/team_attendance_screen.dart';
+import '../../features/manager/presentation/screens/approvals_screen.dart';
 import '../../features/timesheet/presentation/screens/timesheet_screen.dart';
 import '../../features/timesheet/presentation/screens/timesheet_day_screen.dart';
 import '../../features/timesheet/presentation/screens/timesheet_entry_screen.dart';
 import '../../features/timesheet/domain/entities/timesheet_models.dart';
-// Import other screens as needed
+
+import '../../features/attendance/presentation/screens/holiday_warning_screen.dart';
+
+
+import 'package:demo4/features/profile/data/models/user_profile_model.dart';
+import 'package:demo4/features/profile/presentation/screens/profile_screen.dart';
+import 'package:demo4/features/profile/presentation/screens/edit_profile_screen.dart';
+
+import '../../features/manager/presentation/screens/attendance_exception_screen.dart';
+import '../../features/manager/presentation/screens/regularization_screen.dart';
+import '../../features/manager/presentation/screens/leave_approvals_screen.dart';
 
 import 'app_routes.dart';
 
@@ -65,6 +76,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             location: args['location'] ?? '',
             shiftType: args['shiftType'] ?? '',
             isCheckOut: args['isCheckOut'] ?? false,
+            approvalFound: args['approvalFound'] ?? false,
+            isWithinGeofence: args['isWithinGeofence'] ?? false,
+            isWfh: args['isWfh'] ?? false,
           );
         },
       ),
@@ -79,7 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const WorkReasonScreen(),
       ),
       GoRoute(
-        path: '/check-out-exception',
+        path: AppRoutes.checkOutException,
         name: 'check-out-exception',
         builder: (context, state) {
           final extras = state.extra as Map<String, dynamic>;
@@ -200,6 +214,65 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             existingEntry: args['entry'] as TimesheetEntry,
           );
         },
+      ),
+
+      // Add after the check-in route entry:
+      GoRoute(
+        path: AppRoutes.holidayWarning,
+        name: 'holiday-warning',
+        builder: (context, state) => const HolidayWarningScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.earlyCheckIn,
+        builder: (context, state) => EarlyCheckInScreen(
+          shiftStartTime: state.extra as String,
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.profile,
+        name: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+
+        routes: [
+          GoRoute(
+            path: 'edit',                         // resolves to /profile/edit
+            name: AppRoutes.editProfile,
+            builder: (context, state) {
+              // Pass the current profile as an extra object
+              final profile = state.extra as UserProfileModel;
+              return EditProfileScreen(profile: profile);
+            },
+          ),
+        ],
+      ),
+
+      GoRoute(
+        path: AppRoutes.teamAttendance,
+        name: 'team-attendance',
+        builder: (context, state) => const TeamAttendanceScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.approvals,
+        builder: (context, state) => const ApprovalsScreen(),
+        routes: [
+          GoRoute(
+            path: 'attendance-exception',
+            name: 'attendance-exception',
+            builder: (context, state) => const AttendanceExceptionScreen(),
+          ),
+          GoRoute(
+            path: 'regularization',
+            name: 'regularization',
+            builder: (context, state) => const RegularizationScreen(),
+          ),
+          GoRoute(
+            path: 'leave-approvals',
+            name: 'leave-approvals',
+            builder: (context, state) => const LeaveApprovalsScreen(),
+          ),
+        ],
       ),
     ],
     errorBuilder: (context, state) {

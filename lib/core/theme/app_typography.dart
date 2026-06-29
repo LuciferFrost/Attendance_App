@@ -202,7 +202,15 @@ class AppTypography {
 
   static TextStyle get inputHintDark =>
       inputHint.copyWith(color: AppColors.darkTextTertiary);
-  
+
+  // ==================== ALIASES FOR MATERIAL COMPATIBILITY ====================
+  static TextStyle get headlineMedium => heading2;
+  static TextStyle get headlineSmall => heading3;
+  static TextStyle get titleMedium => heading2;
+  static TextStyle get labelLarge => label;
+  static TextStyle get labelMedium => caption;
+  static TextStyle get labelSmall => caption;
+
 }
 
 /// Text theme for Material apps

@@ -18,8 +18,14 @@ abstract class AppRoutes {
   /// Check-out success screen route
   static const String checkOutSuccess = '/check-out-success';
 
+  /// Early check-in approval screen — shown when check-in is attempted before shift window
+  static const String earlyCheckIn = '/early-check-in';
+
   /// Work reason selection screen
   static const String workReason = '/work-reason';
+
+  /// Holiday warning screen — shown when check-in is attempted on a non-working day
+  static const String holidayWarning = '/holiday-warning';
 
   /// Attendance tracking screen
   static const String attendance = '/attendance';
@@ -34,7 +40,7 @@ abstract class AppRoutes {
   static const String checkInHistory = '/check-in-history';
 
   /// Check-out exception screen
-  static const String checkOutException = 'check-out-exception';
+  static const String checkOutException = '/check-out-exception';
 
   /// Employee profile screen
   static const String profile = '/profile';
@@ -93,4 +99,19 @@ abstract class AppRoutes {
 
   /// Edit an existing timesheet entry
   static const String timesheetEditEntry = '/timesheet/day/edit';
+
+  // ─── Profile ──────────────────────────────────────────────────────────────
+
+  /// Edit profile screen
+  static const String editProfile = '/profile/edit';
+
+  // ─── Manager ──────────────────────────────────────────────────────────────
+
+  /// Manager view of team attendance
+  static const String teamAttendance = '/team-attendance';
+
+  /// After teamAttendance constant:
+  static const String attendanceException  = '/approvals/attendance-exception';
+  static const String regularization       = '/approvals/regularization';
+  static const String leaveApprovals       = '/approvals/leave-approvals';
 }

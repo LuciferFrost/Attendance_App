@@ -5,10 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppShell extends StatelessWidget {
-  const AppShell({required this.title, required this.child, super.key});
+  const AppShell({
+    required this.title,
+    required this.child,
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.showAppBar = true,
+    super.key,
+  });
 
   final String title;
   final Widget child;
+  final EdgeInsetsGeometry padding;
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +32,8 @@ class AppShell extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      drawer: context.isDesktop ? null : _NavigationDrawer(destinations),
+      appBar: showAppBar ? AppBar(title: Text(title)) : null,
+      drawer: context.isDesktop || !showAppBar ? null : _NavigationDrawer(destinations),
       body: Row(
         children: [
           if (context.isDesktop)
@@ -35,7 +43,7 @@ class AppShell extends StatelessWidget {
             ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: padding,
               child: child,
             ),
           ),

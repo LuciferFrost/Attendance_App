@@ -37,6 +37,10 @@ abstract class CheckInRepository {
 
   /// Get employee's shift information
   Future<ShiftInfo> getEmployeeShift(String employeeId);
+
+  /// Returns today's HolidayInfo if today is a holiday/non-working day,
+  /// or null if it is a normal working day.
+  Future<HolidayInfo?> getTodayHolidayInfo();
 }
 
 /// Dummy implementation of CheckInRepository using mock data
@@ -76,8 +80,13 @@ class DummyCheckInRepository implements CheckInRepository {
   }) async {
     await Future.delayed(_simulatedDelay);
 
-    // Validate geofence
-    final isWithinBounds = _officeGeofence.isWithinBounds(latitude, longitude);
+    // WFH and WFF employees are not bound by the office geofence —
+    // their check-in always succeeds from wherever they are.
+    // WFO still gates on geofence proximity.
+    final isLocationMode =
+        shiftType == 'WFH' || shiftType == 'WFF';
+    final isWithinBounds =
+        isLocationMode || _officeGeofence.isWithinBounds(latitude, longitude);
     final status = isWithinBounds ? 'success' : 'warning';
 
     final record = CheckInRecord(
@@ -113,7 +122,7 @@ class DummyCheckInRepository implements CheckInRepository {
     await Future.delayed(_simulatedDelay);
 
     final isWithinGeofence =
-        _officeGeofence.isWithinBounds(userLatitude, userLongitude);
+    _officeGeofence.isWithinBounds(userLatitude, userLongitude);
 
     final now = DateTime.now();
     final isOnTime = now.isBefore(shiftStartTime);
@@ -134,14 +143,14 @@ class DummyCheckInRepository implements CheckInRepository {
     await Future.delayed(_simulatedDelay);
 
     final todayRecords = _checkInHistory[employeeId]
-            ?.where((record) {
-              final today = DateTime.now();
-              final recordDate = record.checkInTime;
-              return recordDate.year == today.year &&
-                  recordDate.month == today.month &&
-                  recordDate.day == today.day;
-            })
-            .toList() ??
+        ?.where((record) {
+      final today = DateTime.now();
+      final recordDate = record.checkInTime;
+      return recordDate.year == today.year &&
+          recordDate.month == today.month &&
+          recordDate.day == today.day;
+    })
+        .toList() ??
         [];
 
     return CheckInStatus(
@@ -168,9 +177,9 @@ class DummyCheckInRepository implements CheckInRepository {
 
     return (_checkInHistory[employeeId] ?? [])
         .where((record) {
-          return record.checkInTime.isAfter(startDate) &&
-              record.checkInTime.isBefore(endDate);
-        })
+      return record.checkInTime.isAfter(startDate) &&
+          record.checkInTime.isBefore(endDate);
+    })
         .toList();
   }
 
@@ -184,5 +193,22 @@ class DummyCheckInRepository implements CheckInRepository {
   Future<ShiftInfo> getEmployeeShift(String employeeId) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return _defaultShift;
+  }
+
+  // Dummy holiday data — today is always treated as a holiday for demo purposes.
+  // To simulate a normal working day, return null instead.
+  static final _dummyHoliday = HolidayInfo(
+    id: 'holiday_001',
+    name: 'Holiday / Non-working day',
+    date: DateTime.now(),
+    managerName: 'Priya Sharma (Manager)',
+  );
+
+  @override
+  Future<HolidayInfo?> getTodayHolidayInfo() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    // Return _dummyHoliday to simulate a holiday.
+    // Return null to simulate a normal working day.
+    return null;
   }
 }
