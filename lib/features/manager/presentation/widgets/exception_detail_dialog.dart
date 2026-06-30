@@ -190,35 +190,61 @@ class ExceptionDetailDialog extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Action buttons
-            Row(
-              children: [
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Approve',
-                    icon: Icons.check,
-                    backgroundColor: const Color(0xFFD7F5E4),
-                    foregroundColor: const Color(0xFF1FA45A),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      onApprove?.call();
-                    },
+            if (onApprove != null || onReject != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'Approve',
+                      icon: Icons.check,
+                      backgroundColor: const Color(0xFFD7F5E4),
+                      foregroundColor: const Color(0xFF1FA45A),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onApprove?.call();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ActionButton(
+                      label: 'Reject',
+                      icon: Icons.close,
+                      backgroundColor: const Color(0xFFFCE0DE),
+                      foregroundColor: const Color(0xFFE0473E),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onReject?.call();
+                      },
+                    ),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: Material(
+                  color: const Color(0xFF4F3DF5),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      child: Center(
+                        child: Text(
+                          'Back to approval',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Reject',
-                    icon: Icons.close,
-                    backgroundColor: const Color(0xFFFCE0DE),
-                    foregroundColor: const Color(0xFFE0473E),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      onReject?.call();
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
           ],
         ),
       ),

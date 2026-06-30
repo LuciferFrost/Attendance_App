@@ -104,7 +104,7 @@ class ApprovalRequestCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ── Action buttons ────────────────────────────────────────────────
-          if (status == ApprovalCardStatus.approved)
+          if (status != ApprovalCardStatus.pending)
             _buildDetailOnlyRow()
           else
             _buildActionRow(),

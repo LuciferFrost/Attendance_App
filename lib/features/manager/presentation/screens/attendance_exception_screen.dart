@@ -7,6 +7,7 @@ import '../widgets/approval_request_card.dart';
 import '../widgets/approval_screen_header.dart';
 import '../widgets/sla_warning_banner.dart';
 import '../widgets/exception_detail_dialog.dart';
+import '../widgets/rejection_reason_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // Dummy data
@@ -34,9 +35,22 @@ class _AttendanceExceptionRequest {
     this.locationLabel = 'CraftEdge Office, Sector 62, Noida',
     this.coordinatesLabel = '19.1234°N, 72.8567°E',
   });
+  _AttendanceExceptionRequest copyWith({ApprovalCardStatus? status}) {
+    return _AttendanceExceptionRequest(
+      employeeName: employeeName,
+      empCode: empCode,
+      date: date,
+      reason: reason,
+      remarks: remarks,
+      slaLabel: slaLabel,
+      status: status ?? this.status,
+      locationLabel: locationLabel,
+      coordinatesLabel: coordinatesLabel,
+    );
+  }
 }
 
-final _dummyRequests = [
+final List<_AttendanceExceptionRequest> _initialRequests = [
   const _AttendanceExceptionRequest(
     employeeName: 'Aditya Kumar',
     empCode: 'EMP-0042',
@@ -80,21 +94,34 @@ class AttendanceExceptionScreen extends ConsumerStatefulWidget {
 class _AttendanceExceptionScreenState
     extends ConsumerState<AttendanceExceptionScreen> {
   ApprovalFilter _filter = ApprovalFilter.all;
+  late List<_AttendanceExceptionRequest> _requests;
+
+  @override
+  void initState() {
+    super.initState();
+    _requests = List.from(_initialRequests);
+  }
+
+  void _updateStatus(int index, ApprovalCardStatus status) {
+    setState(() {
+      _requests[index] = _requests[index].copyWith(status: status);
+    });
+  }
 
   List<_AttendanceExceptionRequest> get _filtered {
     switch (_filter) {
       case ApprovalFilter.all:
-        return _dummyRequests;
+        return _requests;
       case ApprovalFilter.pending:
-        return _dummyRequests
+        return _requests
             .where((r) => r.status == ApprovalCardStatus.pending)
             .toList();
       case ApprovalFilter.approved:
-        return _dummyRequests
+        return _requests
             .where((r) => r.status == ApprovalCardStatus.approved)
             .toList();
       case ApprovalFilter.rejected:
-        return _dummyRequests
+        return _requests
             .where((r) => r.status == ApprovalCardStatus.rejected)
             .toList();
     }
@@ -118,31 +145,43 @@ class _AttendanceExceptionScreenState
                 children: [
                   const SlaWarningBanner(),
                   const SizedBox(height: 16),
-                  ..._filtered.map(
-                        (r) => ApprovalRequestCard(
-                      employeeName: r.employeeName,
-                      empCode: r.empCode,
-                      date: r.date,
-                      metaLine1: r.reason,
-                      metaLine2: r.remarks,
-                      slaLabel: r.slaLabel,
-                      status: r.status,
-                      line1Icon: Icons.location_on_outlined,
-                      line2Icon: Icons.chat_bubble_outline_rounded,
-                      onApprove: () {/* TODO */},
-                      onReject: () {/* TODO */},
-                      onDetail: () {
-                        ExceptionDetailDialog.show(
-                          context,
-                          exceptionReason: r.reason,
-                          remarks: r.remarks,
-                          locationLabel: r.locationLabel,
-                          coordinatesLabel: r.coordinatesLabel,
-                          onApprove: () {/* TODO: wire approve action */},
-                          onReject: () {/* TODO: wire reject action */},
-                        );
-                      },
-                    ),
+                  ..._requests.asMap().entries.where((entry) {
+                    if (_filter == ApprovalFilter.all) return true;
+                    if (_filter == ApprovalFilter.pending) {
+                      return entry.value.status == ApprovalCardStatus.pending;
+                    }
+                    if (_filter == ApprovalFilter.approved) {
+                      return entry.value.status == ApprovalCardStatus.approved;
+                    }
+                    if (_filter == ApprovalFilter.rejected) {
+                      return entry.value.status == ApprovalCardStatus.rejected;
+                    }
+                    return false;
+                  }).map(
+                        (entry) {
+                      final index = entry.key;
+                      final r = entry.value;
+                      return ApprovalRequestCard(
+                        employeeName: r.employeeName,
+                        empCode: r.empCode,
+                        date: r.date,
+                        metaLine1: r.reason,
+                        metaLine2: r.remarks,
+                        slaLabel: r.slaLabel,
+                        status: r.status,
+                        line1Icon: Icons.location_on_outlined,
+                        line2Icon: Icons.chat_bubble_outline_rounded,
+                        onApprove: () {
+                          // Open detail dialog first as requested
+                          _showDetail(index, r);
+                        },
+                        onReject: () {
+                          // Open detail dialog first as requested
+                          _showDetail(index, r);
+                        },
+                        onDetail: () => _showDetail(index, r),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -151,6 +190,39 @@ class _AttendanceExceptionScreenState
           ],
         ),
       ),
+    );
+  }
+
+  void _showDetail(int index, _AttendanceExceptionRequest r) {
+    final bool isPending = r.status == ApprovalCardStatus.pending;
+
+    ExceptionDetailDialog.show(
+      context,
+      exceptionReason: r.reason,
+      remarks: r.remarks,
+      locationLabel: r.locationLabel,
+      coordinatesLabel: r.coordinatesLabel,
+      // Already approved/rejected: read-only view, no action buttons.
+      // ExceptionDetailDialog should render a single "Back to approval"
+      // button (which just closes the dialog) whenever onApprove and
+      // onReject are both null.
+      onApprove: isPending
+          ? () {
+        _updateStatus(index, ApprovalCardStatus.approved);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Exception Approved')),
+        );
+      }
+          : null,
+      onReject: isPending
+          ? () {
+        RejectionReasonDialog.show(context).then((result) {
+          if (result == true) {
+            _updateStatus(index, ApprovalCardStatus.rejected);
+          }
+        });
+      }
+          : null,
     );
   }
 }
