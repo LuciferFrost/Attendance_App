@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-
-import 'package:go_router/go_router.dart';
 import '../../../../core/routing/app_routes.dart';
+import '../widgets/approval_bottom_nav_bar.dart';
+import 'timesheet_approvals_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -60,6 +61,7 @@ const _queues = [
     icon: Icons.assignment_outlined,
     iconColor: Color(0xFF7C3AED),
     iconBg: Color(0xFFF3E8FF),
+    route: 'timesheets',
   ),
   _ApprovalQueue(
     title: 'My Request',
@@ -67,6 +69,7 @@ const _queues = [
     icon: Icons.person_outline_rounded,
     iconColor: Color(0xFF4338CA),
     iconBg: Color(0xFFEEF2FF),
+    route: AppRoutes.myRequests,
   ),
 ];
 
@@ -99,7 +102,7 @@ class ApprovalsScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            _buildBottomNav(context),
+            const ApprovalBottomNavBar(activeIndex: 3),
           ],
         ),
       ),
@@ -112,7 +115,7 @@ class ApprovalsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
-        color: const Color(0xFF11141E)
+          color: const Color(0xFF11141E)
       ),
       child: Stack(
         alignment: Alignment.centerLeft,
@@ -176,21 +179,21 @@ class ApprovalsScreen extends ConsumerWidget {
                 Text(
                   '$_totalPending requests need your decision',
                   style: AppTypography.bodyMedium?.copyWith(
-                    color: const Color(0xFF3B5BDB),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    fontFamily: 'DMSans'
+                      color: const Color(0xFF3B5BDB),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                      fontFamily: 'DMSans'
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Tap a queue to review. Rejections always require remarks.',
                   style: AppTypography.bodySmall?.copyWith(
-                    color: const Color(0xFF464555),
-                    height: 1.4,
-                    fontFamily: 'DMSans',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14
+                      color: const Color(0xFF464555),
+                      height: 1.4,
+                      fontFamily: 'DMSans',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14
                   ),
                 ),
               ],
@@ -212,7 +215,13 @@ class ApprovalsScreen extends ConsumerWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
           onTap: () {
-            if (q.route != null) {
+            if (q.route == 'timesheets') {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const TimesheetApprovalsScreen(),
+                ),
+              );
+            } else if (q.route != null) {
               context.push(q.route!);
             }
           },
@@ -248,10 +257,10 @@ class ApprovalsScreen extends ConsumerWidget {
                       Text(
                         q.title,
                         style: AppTypography.bodyMedium?.copyWith(
-                          color: const Color(0xFF1E293B),
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'DMSans',
-                          fontSize: 14
+                            color: const Color(0xFF1E293B),
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'DMSans',
+                            fontSize: 14
 
                         ),
                       ),
@@ -280,110 +289,4 @@ class ApprovalsScreen extends ConsumerWidget {
       ),
     );
   }
-
-  // ── Bottom nav ────────────────────────────────────────────────────────────
-
-  Widget _buildBottomNav(BuildContext context) {
-    final items = [
-      _NavItem(icon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.login_rounded, label: 'Attend.'),
-      _NavItem(icon: Icons.people_outline_rounded, label: 'Meetings'),
-      _NavItem(icon: Icons.check_box_outlined, label: 'Approvals', isActive: true, badge: 3),
-      _NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
-    ];
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: items.map((item) => _buildNavItem(context, item)).toList(),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(BuildContext context, _NavItem item) {
-    return GestureDetector(
-      onTap: () {
-        if (!item.isActive) Navigator.of(context).pop();
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  item.icon,
-                  size: 22,
-                  color: item.isActive ? AppColors.primary700 : const Color(0xFF9CA3AF),
-                ),
-                if (item.badge != null)
-                  Positioned(
-                    top: -6,
-                    right: -8,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${item.badge}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'DMSans',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.label,
-              style: AppTypography.caption?.copyWith(
-                fontSize: 10,
-                color: item.isActive ? AppColors.primary700 : const Color(0xFF9CA3AF),
-                fontWeight: item.isActive ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-            if (item.isActive)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                width: 20,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: AppColors.primary700,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final int? badge;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.isActive = false,
-    this.badge,
-  });
 }

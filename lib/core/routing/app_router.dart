@@ -35,6 +35,7 @@ import 'package:demo4/features/profile/presentation/screens/edit_profile_screen.
 import '../../features/manager/presentation/screens/attendance_exception_screen.dart';
 import '../../features/manager/presentation/screens/regularization_screen.dart';
 import '../../features/manager/presentation/screens/leave_approvals_screen.dart';
+import '../../features/manager/presentation/screens/my_requests_screen.dart';
 
 import 'app_routes.dart';
 
@@ -255,24 +256,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       GoRoute(
         path: AppRoutes.approvals,
+        name: 'approvals',
         builder: (context, state) => const ApprovalsScreen(),
-        routes: [
-          GoRoute(
-            path: 'attendance-exception',
-            name: 'attendance-exception',
-            builder: (context, state) => const AttendanceExceptionScreen(),
-          ),
-          GoRoute(
-            path: 'regularization',
-            name: 'regularization',
-            builder: (context, state) => const RegularizationScreen(),
-          ),
-          GoRoute(
-            path: 'leave-approvals',
-            name: 'leave-approvals',
-            builder: (context, state) => const LeaveApprovalsScreen(),
-          ),
-        ],
+      ),
+      GoRoute(
+        path: AppRoutes.attendanceException,
+        name: 'attendance-exception',
+        builder: (context, state) => const AttendanceExceptionScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.regularization,
+        name: 'regularization',
+        builder: (context, state) => const RegularizationScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.leaveApprovals,
+        name: 'leave-approvals',
+        builder: (context, state) => const LeaveApprovalsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.myRequests,
+        name: 'my-requests',
+        builder: (context, state) => const MyRequestsScreen(),
       ),
     ],
     errorBuilder: (context, state) {

@@ -114,4 +114,5 @@ abstract class AppRoutes {
   static const String attendanceException  = '/approvals/attendance-exception';
   static const String regularization       = '/approvals/regularization';
   static const String leaveApprovals       = '/approvals/leave-approvals';
+  static const String myRequests           = '/approvals/my-requests';
 }

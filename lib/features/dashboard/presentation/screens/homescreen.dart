@@ -249,24 +249,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _handleNavigation(int index) {
-    setState(() {
-      _selectedNavIndex = index;
-    });
-
     switch (index) {
       case 0:
+        setState(() {
+          _selectedNavIndex = index;
+        });
         break;
       case 1:
+        setState(() {
+          _selectedNavIndex = index;
+        });
         context.push(AppRoutes.attendance).then((_) => setState(() => _selectedNavIndex = 0));
         break;
       case 2:
+        setState(() {
+          _selectedNavIndex = index;
+        });
         context.push(AppRoutes.meetings).then((_) => setState(() => _selectedNavIndex = 0));
         break;
       case 3:
-        context.push(AppRoutes.approvals);
+        final isManager = ref.read(dashboardStateProvider).isManager;
+        if (isManager) {
+          setState(() {
+            _selectedNavIndex = index;
+          });
+          context.push(AppRoutes.approvals).then((_) => setState(() => _selectedNavIndex = 0));
+        }
+        // If not manager, do nothing
         break;
       case 4:
-        context.push(AppRoutes.profile);
+        setState(() {
+          _selectedNavIndex = index;
+        });
+        context.push(AppRoutes.profile).then((_) => setState(() => _selectedNavIndex = 0));
         break;
     }
   }

@@ -5,6 +5,7 @@ import '../widgets/approval_bottom_nav_bar.dart';
 import '../widgets/approval_filter_tabs.dart';
 import '../widgets/approval_request_card.dart';
 import '../widgets/approval_screen_header.dart';
+import '../widgets/regularize_detail_dialog.dart';
 import '../widgets/sla_warning_banner.dart';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,10 @@ class _RegularizationRequest {
   final String? slaLabel;
   final ApprovalCardStatus status;
 
+  // Fields shown inside the "Regularize Detail" pop-up.
+  final String actualCheckInTime;
+  final String detailRemarks;
+
   const _RegularizationRequest({
     required this.employeeName,
     required this.empCode,
@@ -28,6 +33,10 @@ class _RegularizationRequest {
     required this.remarks,
     this.slaLabel,
     this.status = ApprovalCardStatus.pending,
+    this.actualCheckInTime = '10:08:00 AM',
+    this.detailRemarks =
+    'Had to rush to client site for urgent requirement discussion '
+        'before EOD. Left office premises at 6:20 PM.',
   });
 }
 
@@ -92,6 +101,23 @@ class _RegularizationScreenState extends ConsumerState<RegularizationScreen> {
     }
   }
 
+  void _openDetail(_RegularizationRequest r) {
+    showRegularizeDetailDialog(
+      context: context,
+      detail: RegularizeDetail(
+        requestType: r.reason,
+        actualCheckInTime: r.actualCheckInTime,
+        remarks: r.detailRemarks,
+      ),
+      onApprove: () {
+        // TODO: hook up approve action
+      },
+      onReject: () {
+        // TODO: hook up reject action
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,7 +137,7 @@ class _RegularizationScreenState extends ConsumerState<RegularizationScreen> {
                   const SlaWarningBanner(),
                   const SizedBox(height: 16),
                   ..._filtered.map(
-                    (r) => ApprovalRequestCard(
+                        (r) => ApprovalRequestCard(
                       employeeName: r.employeeName,
                       empCode: r.empCode,
                       date: r.date,
@@ -123,7 +149,7 @@ class _RegularizationScreenState extends ConsumerState<RegularizationScreen> {
                       line2Icon: Icons.chat_bubble_outline_rounded,
                       onApprove: () {/* TODO */},
                       onReject: () {/* TODO */},
-                      onDetail: () {/* TODO */},
+                      onDetail: () => _openDetail(r),
                     ),
                   ),
                 ],

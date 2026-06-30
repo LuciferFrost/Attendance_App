@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/routing/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 
@@ -6,21 +8,18 @@ import '../../../../core/theme/app_typography.dart';
 /// [activeIndex] maps to: 0=Home, 1=Attend., 2=Meetings, 3=Approvals, 4=Profile
 class ApprovalBottomNavBar extends StatelessWidget {
   final int activeIndex;
-  final int approvalsBadgeCount;
 
   const ApprovalBottomNavBar({
     Key? key,
     this.activeIndex = 3,
-    this.approvalsBadgeCount = 3,
   }) : super(key: key);
 
-  static const _labels = ['Home', 'Attend.', 'Meetings', 'Approvals', 'Profile'];
-  static const _icons = [
-    Icons.home_rounded,
-    Icons.login_rounded,
-    Icons.people_outline_rounded,
-    Icons.check_box_outlined,
-    Icons.person_outline_rounded,
+  static final List<Map<String, dynamic>> _navItems = [
+    {'icon': Icons.home_rounded, 'label': 'Home', 'route': AppRoutes.dashboard},
+    {'icon': 'assets/images/home_NavAttend.png', 'label': 'Attend.', 'route': AppRoutes.attendance},
+    {'icon': 'assets/images/home_NavMeetings.png', 'label': 'Meetings', 'route': AppRoutes.meetings},
+    {'icon': 'assets/images/home_NavApproval.png', 'label': 'Approvals', 'route': AppRoutes.approvals},
+    {'icon': 'assets/images/home_NavProfile.png', 'label': 'Profile', 'route': AppRoutes.profile},
   ];
 
   @override
@@ -28,81 +27,62 @@ class ApprovalBottomNavBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+        border: Border(
+          top: BorderSide(
+            color: Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(_labels.length, (i) => _buildItem(context, i)),
+        children: List.generate(
+          _navItems.length,
+          (i) => _buildItem(context, i),
+        ),
       ),
     );
   }
 
   Widget _buildItem(BuildContext context, int index) {
+    final item = _navItems[index];
     final isActive = index == activeIndex;
-    final showBadge = index == 3 && approvalsBadgeCount > 0;
+    final dynamic icon = item['icon'];
+    final String label = item['label'];
 
     return GestureDetector(
       onTap: () {
-        if (!isActive) Navigator.of(context).pop();
+        if (!isActive) {
+          context.go(item['route']);
+        }
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  _icons[index],
-                  size: 22,
-                  color: isActive ? AppColors.primary700 : const Color(0xFF9CA3AF),
-                ),
-                if (showBadge)
-                  Positioned(
-                    top: -6,
-                    right: -8,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$approvalsBadgeCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'DMSans',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            if (icon is IconData)
+              Icon(
+                icon,
+                size: 20,
+                color: isActive ? AppColors.primary700 : const Color(0xFF6B7280),
+              )
+            else
+              Image.asset(
+                icon,
+                width: 20,
+                height: 20,
+                color: isActive ? AppColors.primary700 : const Color(0xFF6B7280),
+              ),
             const SizedBox(height: 4),
             Text(
-              _labels[index],
+              label,
               style: AppTypography.caption?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: isActive ? AppColors.primary700 : const Color(0xFF6B7280),
                 fontSize: 10,
-                color: isActive ? AppColors.primary700 : const Color(0xFF9CA3AF),
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
-            if (isActive)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                width: 20,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: AppColors.primary700,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
           ],
         ),
       ),

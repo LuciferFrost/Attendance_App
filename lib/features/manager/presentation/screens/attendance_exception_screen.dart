@@ -6,6 +6,7 @@ import '../widgets/approval_filter_tabs.dart';
 import '../widgets/approval_request_card.dart';
 import '../widgets/approval_screen_header.dart';
 import '../widgets/sla_warning_banner.dart';
+import '../widgets/exception_detail_dialog.dart';
 
 // ---------------------------------------------------------------------------
 // Dummy data
@@ -19,6 +20,8 @@ class _AttendanceExceptionRequest {
   final String remarks;
   final String? slaLabel;
   final ApprovalCardStatus status;
+  final String locationLabel;
+  final String coordinatesLabel;
 
   const _AttendanceExceptionRequest({
     required this.employeeName,
@@ -28,6 +31,8 @@ class _AttendanceExceptionRequest {
     required this.remarks,
     this.slaLabel,
     this.status = ApprovalCardStatus.pending,
+    this.locationLabel = 'CraftEdge Office, Sector 62, Noida',
+    this.coordinatesLabel = '19.1234°N, 72.8567°E',
   });
 }
 
@@ -114,7 +119,7 @@ class _AttendanceExceptionScreenState
                   const SlaWarningBanner(),
                   const SizedBox(height: 16),
                   ..._filtered.map(
-                    (r) => ApprovalRequestCard(
+                        (r) => ApprovalRequestCard(
                       employeeName: r.employeeName,
                       empCode: r.empCode,
                       date: r.date,
@@ -126,7 +131,17 @@ class _AttendanceExceptionScreenState
                       line2Icon: Icons.chat_bubble_outline_rounded,
                       onApprove: () {/* TODO */},
                       onReject: () {/* TODO */},
-                      onDetail: () {/* TODO */},
+                      onDetail: () {
+                        ExceptionDetailDialog.show(
+                          context,
+                          exceptionReason: r.reason,
+                          remarks: r.remarks,
+                          locationLabel: r.locationLabel,
+                          coordinatesLabel: r.coordinatesLabel,
+                          onApprove: () {/* TODO: wire approve action */},
+                          onReject: () {/* TODO: wire reject action */},
+                        );
+                      },
                     ),
                   ),
                 ],
